@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npm create *)",
+      "Bash(pkill -f \"create-electron-vite\")",
+      "Bash(npm show *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('exports', d.get\\('main', 'N/A'\\)\\)\\)\")",
+      "Bash(./node_modules/.bin/electron --version)",
+      "Bash(/Users/nhunglc/NovaDirectory/node_modules/.bin/electron /Users/nhunglc/NovaDirectory/test-electron.js)",
+      "Bash(sed -i '' 's|\"out/main/main.js\"|\"test-electron.js\"|' /Users/nhunglc/NovaDirectory/package.json)",
+      "Bash(/Users/nhunglc/NovaDirectory/node_modules/.bin/electron .)",
+      "Bash(/Users/nhunglc/NovaDirectory/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron --version)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:v for k,v in d.items\\(\\) if k in ['version','peerDependencies','engines']}, indent=2\\)\\)\")",
+      "Bash(npx @quick-start/create-electron /tmp/test-electron-app --template react-ts)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('main:', d.get\\('main'\\)\\); print\\('electron version:', d.get\\('devDependencies', {}\\).get\\('electron', 'N/A'\\)\\)\")",
+      "Bash(/Users/nhunglc/NovaDirectory/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron /Users/nhunglc/NovaDirectory/out/main/main.js)",
+      "Bash(/Users/nhunglc/NovaDirectory/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron .)",
+      "Bash(sed -i '' 's|\"out/main/main.js\"|\"test2.js\"|' /Users/nhunglc/NovaDirectory/package.json)",
+      "Bash(open -a /Users/nhunglc/NovaDirectory/node_modules/electron/dist/Electron.app --args .)",
+      "Bash(sed -i '' 's|\"test2.js\"|\"out/main/main.js\"|' /Users/nhunglc/NovaDirectory/package.json)",
+      "Bash(/Users/nhunglc/NovaDirectory/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron . --no-sandbox)",
+      "Bash(mkdir -p /tmp/electron-official-test)",
+      "Bash(cp -r /Users/nhunglc/.npm/_npx/7ccc2694a8316149/node_modules/@quick-start/create-electron/template/react-ts/. /tmp/electron-official-test/)",
+      "Bash(/tmp/electron-official-test/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron .)",
+      "Bash(xattr -l /Users/nhunglc/NovaDirectory/node_modules/electron/dist/Electron.app)",
+      "Bash(codesign -v /Users/nhunglc/NovaDirectory/node_modules/electron/dist/Electron.app)",
+      "Bash(sudo codesign *)",
+      "Bash(codesign --force --deep --sign - /Users/nhunglc/NovaDirectory/node_modules/electron/dist/Electron.app)",
+      "Bash(python3 -c \"import sys,json; v=json.load\\(sys.stdin\\); print\\([x for x in v if x.startswith\\('28'\\) or x.startswith\\('29'\\) or x.startswith\\('30'\\) or x.startswith\\('31'\\)][-1]\\)\")",
+      "Bash(python3 -c \"import sys,json; v=json.load\\(sys.stdin\\); print\\([x for x in v if x.startswith\\('25'\\) or x.startswith\\('26'\\)][-1]\\)\")",
+      "Bash(sed -i '' 's|\"out/main/index.js\"|\"test2.js\"|' /Users/nhunglc/NovaDirectory/package.json)",
+      "Bash(open -W /Users/nhunglc/NovaDirectory/node_modules/electron/dist/Electron.app --args /Users/nhunglc/NovaDirectory)",
+      "Bash(python3 -c \"import sys,json; v=json.load\\(sys.stdin\\); print\\(v[-1] if isinstance\\(v, list\\) else v\\)\")",
+      "Bash(codesign --force --deep --sign - /Users/nhunglc/NovaDirectory/node_modules/electron-nightly/dist/Electron.app)",
+      "Bash(/Users/nhunglc/NovaDirectory/node_modules/electron-nightly/dist/Electron.app/Contents/MacOS/Electron .)",
+      "Read(//Applications/**)",
+      "Bash(codesign --force --deep --sign - --entitlements /tmp/electron-entitlements.plist /Users/nhunglc/NovaDirectory/node_modules/electron/dist/Electron.app)",
+      "Bash(pkill -f \"electron-vite dev\")",
+      "Bash(pkill -f Electron)",
+      "Bash(python3 -c ' *)"
+    ],
+    "additionalDirectories": [
+      "/Users/nhunglc/NovaDirectory/electron/ipc"
+    ]
+  }
+}
