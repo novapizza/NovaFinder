@@ -15,6 +15,7 @@ type Props = {
   onContextMenu: (e: React.MouseEvent, path: string) => void
   startInEdit?: boolean
   onEditDone?: () => void
+  gitStatus?: string
 }
 
 const KIND: Record<string, string> = {
@@ -35,7 +36,7 @@ function kindLabel(ext: string, isDirectory: boolean): string {
   return KIND[ext.toLowerCase()] || (ext ? `${ext.toUpperCase()} document` : 'Document')
 }
 
-export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContextMenu, startInEdit, onEditDone }: Props) {
+export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContextMenu, startInEdit, onEditDone, gitStatus }: Props) {
   const [editing, setEditing] = useState(!!startInEdit)
   const [editName, setEditName] = useState(entry.name)
   const cutFiles = useClipboardStore((s) => s.files)
@@ -82,9 +83,10 @@ export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContext
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
-        <span className="flex items-center min-w-0">
+        <span className="flex items-center min-w-0 gap-1.5">
           <span className="truncate">{entry.name}</span>
           <TagDots colors={tags} size={7} />
+          {gitStatus && <GitBadge status={gitStatus} />}
         </span>
       )}
 
@@ -94,5 +96,26 @@ export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContext
       </span>
       <span className="text-xs text-muted-foreground truncate">{kindLabel(entry.ext, entry.isDirectory)}</span>
     </div>
+  )
+}
+
+const GIT_BADGE: Record<string, { label: string; color: string }> = {
+  M: { label: 'M', color: '#F5A623' },
+  A: { label: 'A', color: '#4CD964' },
+  D: { label: 'D', color: '#FF3B30' },
+  R: { label: 'R', color: '#5AC8FA' },
+  '?': { label: '?', color: '#8E8E93' },
+}
+
+function GitBadge({ status }: { status: string }) {
+  const badge = GIT_BADGE[status]
+  if (!badge) return null
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded text-[9px] font-bold leading-none px-1 py-0.5 flex-shrink-0"
+      style={{ backgroundColor: badge.color + '33', color: badge.color, minWidth: 14 }}
+    >
+      {badge.label}
+    </span>
   )
 }

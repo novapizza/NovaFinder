@@ -11,6 +11,9 @@ import { useClipboardStore } from '../../store/clipboardStore'
 import { useSearchStore } from '../../store/searchStore'
 import { useTagStore, type TagColor, EMPTY_TAGS } from '../../store/tagStore'
 import { useRecentsStore, RECENTS_PATH } from '../../store/recentsStore'
+import { useRecentFoldersStore } from '../../store/recentFoldersStore'
+import { usePinnedStore } from '../../store/pinnedStore'
+import { useGitStatus } from '../../hooks/useGitStatus'
 import { FileIcon } from '../FileIcon'
 
 type Props = {
@@ -40,6 +43,9 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   const [renamingPath, setRenamingPath] = useState<string | null>(null)
   const [infoPath, setInfoPath] = useState<string | null>(null)
   const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
+  const addRecentFolder = useRecentFoldersStore((s) => s.add)
+  const { add: pinFolder } = usePinnedStore()
+  const gitStatus = useGitStatus(isRecentsMode ? '' : pane.path)
 
   const { query: searchQuery, mode: searchMode, results: searchResults, scope: searchScope, searching } = useSearchStore()
   const toggleTag = useTagStore((s) => s.toggle)
@@ -69,6 +75,10 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
     registerNewFolder?.(() => { setPendingNew({ type: 'folder' }) })
     registerNewFile?.(() => { setPendingNew({ type: 'file' }) })
   }, [])
+
+  useEffect(() => {
+    if (!isRecentsMode && pane.path) addRecentFolder(pane.path)
+  }, [pane.path])
 
   async function commitPending(name: string) {
     if (!pendingNew) return
@@ -147,6 +157,10 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   }
   const countLabel = menuTargets.length > 1 ? `${menuTargets.length} items` : `"${firstName()}"`
 
+  const targetEntry = sorted.find((e) => e.path === menuTargets[0])
+  const targetIsDir = targetEntry?.isDirectory ?? false
+  const targetIsZip = targetEntry?.ext === 'zip'
+
   const menuItems: MenuItem[] = !menu ? [] :
     menu.path === pane.path && pane.selection.length === 0
       ? [
@@ -154,6 +168,8 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
           { label: 'New File',   icon: 'new-file',   action: () => { setMenu(null); setPendingNew({ type: 'file' }) } },
           { separator: true },
           { label: 'Paste', icon: 'paste', action: () => paste(pane.path), disabled: !hasClipboard },
+          { separator: true },
+          { label: 'Open in Terminal', icon: 'open', action: () => window.fs.openInTerminal(pane.path) },
           { separator: true },
           { label: 'Get Info', icon: 'info', action: () => setInfoPath(pane.path) },
           { label: 'Refresh',  icon: 'refresh', action: () => reload() },
@@ -169,8 +185,13 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
           },
           { label: 'Open with Default App', icon: 'open-default', action: () => window.fs.open(menuTargets[0]) },
           { label: 'Reveal in Finder', icon: 'reveal', action: () => window.fs.showItemInFolder(menuTargets[0]) },
+          ...(targetIsDir ? [{ label: 'Open in Terminal', icon: 'open' as const, action: () => window.fs.openInTerminal(menuTargets[0]) }] : []),
           { label: 'Move to Trash', icon: 'trash', action: () => deleteFiles(menuTargets), danger: true },
           { separator: true },
+          { label: `Compress ${countLabel}`, icon: 'duplicate', action: () => window.fs.zip(menuTargets).catch(() => {}) },
+          ...(targetIsZip && menuTargets.length === 1 ? [{ label: 'Extract Here', icon: 'open' as const, action: () => window.fs.unzip(menuTargets[0]).catch(() => {}) }] : []),
+          { separator: true },
+          ...(targetIsDir && menuTargets.length === 1 ? [{ label: 'Pin to Sidebar', icon: 'copy-path' as const, action: () => pinFolder(menuTargets[0], menuTargets[0].split('/').pop() ?? menuTargets[0]) }] : []),
           { label: 'Get Info', icon: 'info', action: () => setInfoPath(menuTargets[0]) },
           { separator: true },
           { label: `Cut ${countLabel}`, icon: 'cut', action: () => cut(menuTargets) },
@@ -243,6 +264,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
                 onContextMenu={handleContextMenu}
                 startInEdit={renamingPath === entry.path}
                 onEditDone={() => setRenamingPath(null)}
+                gitStatus={gitStatus[entry.name]}
               />
             ))}
           </>
@@ -261,6 +283,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
             pendingNew={pendingNew}
             onPendingCommit={commitPending}
             onPendingCancel={() => setPendingNew(null)}
+            gitStatusMap={gitStatus}
           />
         )}
       </div>

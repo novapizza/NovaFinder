@@ -3,6 +3,7 @@ import fs from 'fs/promises'
 import fsSync from 'fs'
 import path from 'path'
 import os from 'os'
+import { exec, execFile } from 'child_process'
 
 export type FileEntry = {
   name: string
@@ -253,5 +254,57 @@ export function registerFsHandlers() {
     }
     dirs.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
     return dirs
+  })
+
+  ipcMain.handle('shell:openInTerminal', (_e, dirPath: string) => {
+    exec(`open -a Terminal ${JSON.stringify(dirPath)}`)
+  })
+
+  ipcMain.handle('fs:zip', async (_e, filePaths: string[]) => {
+    if (!filePaths.length) return
+    const dir = path.dirname(filePaths[0])
+    const names = filePaths.map((f) => path.basename(f))
+    const baseName = names.length === 1 ? names[0] : 'Archive'
+    let archiveName = `${baseName}.zip`
+    let count = 2
+    while (fsSync.existsSync(path.join(dir, archiveName))) {
+      archiveName = `${baseName} ${count}.zip`
+      count++
+    }
+    const destPath = path.join(dir, archiveName)
+    await new Promise<void>((resolve, reject) => {
+      execFile('zip', ['-r', destPath, ...names], { cwd: dir }, (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+    return destPath
+  })
+
+  ipcMain.handle('fs:unzip', async (_e, zipPath: string) => {
+    const dir = path.dirname(zipPath)
+    await new Promise<void>((resolve, reject) => {
+      execFile('unzip', ['-o', zipPath, '-d', dir], (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+  })
+
+  ipcMain.handle('fs:gitStatus', (_e, dirPath: string) => {
+    return new Promise<Record<string, string>>((resolve) => {
+      exec(`git -C ${JSON.stringify(dirPath)} status --porcelain`, (err, stdout) => {
+        if (err) { resolve({}); return }
+        const result: Record<string, string> = {}
+        for (const line of stdout.split('\n')) {
+          if (!line.trim()) continue
+          const xy = line.substring(0, 2).trim()
+          const filePart = line.substring(3).trim().split(' -> ').pop() ?? ''
+          const name = filePart.split('/').pop() ?? filePart
+          if (name) result[name] = xy === '??' ? '?' : (xy[0] && xy[0] !== ' ' ? xy[0] : xy[1]) || '?'
+        }
+        resolve(result)
+      })
+    })
   })
 }

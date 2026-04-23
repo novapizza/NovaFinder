@@ -21,9 +21,10 @@ type Props = {
   pendingNew: PendingNew | null
   onPendingCommit: (name: string) => void
   onPendingCancel: () => void
+  gitStatusMap?: Record<string, string>
 }
 
-export function FileGrid({ entries, selection, onSelect, onOpen, onRename, onContextMenu, renamingPath, onEditDone, pendingNew, onPendingCommit, onPendingCancel }: Props) {
+export function FileGrid({ entries, selection, onSelect, onOpen, onRename, onContextMenu, renamingPath, onEditDone, pendingNew, onPendingCommit, onPendingCancel, gitStatusMap }: Props) {
   return (
     <div className="grid gap-3 p-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(112px, 1fr))' }}>
       {pendingNew && (
@@ -44,6 +45,7 @@ export function FileGrid({ entries, selection, onSelect, onOpen, onRename, onCon
           onContextMenu={onContextMenu}
           startInEdit={renamingPath === entry.path}
           onEditDone={onEditDone}
+          gitStatus={gitStatusMap?.[entry.name]}
         />
       ))}
     </div>
@@ -100,9 +102,10 @@ type TileProps = {
   onContextMenu: (e: React.MouseEvent, path: string) => void
   startInEdit?: boolean
   onEditDone?: () => void
+  gitStatus?: string
 }
 
-function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, startInEdit, onEditDone }: TileProps) {
+function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, startInEdit, onEditDone, gitStatus }: TileProps) {
   const [editing, setEditing] = useState(!!startInEdit)
   const [name, setName] = useState(entry.name)
   const cutFiles = useClipboardStore((s) => s.files)
@@ -165,9 +168,33 @@ function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, 
           <span className="line-clamp-2 text-center text-[11px] leading-tight text-foreground break-all">
             {entry.name}
           </span>
-          {tags.length > 0 && <TagDots colors={tags} size={6} />}
+          <span className="flex items-center gap-1">
+            {tags.length > 0 && <TagDots colors={tags} size={6} />}
+            {gitStatus && <GitBadge status={gitStatus} />}
+          </span>
         </span>
       )}
     </button>
+  )
+}
+
+const GIT_BADGE: Record<string, { label: string; color: string }> = {
+  M: { label: 'M', color: '#F5A623' },
+  A: { label: 'A', color: '#4CD964' },
+  D: { label: 'D', color: '#FF3B30' },
+  R: { label: 'R', color: '#5AC8FA' },
+  '?': { label: '?', color: '#8E8E93' },
+}
+
+function GitBadge({ status }: { status: string }) {
+  const badge = GIT_BADGE[status]
+  if (!badge) return null
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded text-[9px] font-bold leading-none px-1 py-0.5"
+      style={{ backgroundColor: badge.color + '33', color: badge.color, minWidth: 14 }}
+    >
+      {badge.label}
+    </span>
   )
 }

@@ -3,6 +3,8 @@ import type { SpecialPaths } from '../../../preload'
 import { usePaneStore } from '../../store/paneStore'
 import { useTagStore, TAG_COLORS } from '../../store/tagStore'
 import { useRecentsStore, RECENTS_PATH } from '../../store/recentsStore'
+import { usePinnedStore } from '../../store/pinnedStore'
+import { useRecentFoldersStore } from '../../store/recentFoldersStore'
 import { SidebarIcon, type SidebarIconName } from './SidebarIcon'
 import { FileIcon } from '../FileIcon'
 
@@ -21,6 +23,8 @@ export function Sidebar() {
   const tagMap = useTagStore((s) => s.map)
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const hasRecents = useRecentsStore((s) => s.recents.length > 0)
+  const { pinned, remove: removePin } = usePinnedStore()
+  const recentFolders = useRecentFoldersStore((s) => s.folders)
 
   useEffect(() => { window.fs.specialPaths().then(setPaths) }, [])
   useEffect(() => {
@@ -37,7 +41,6 @@ export function Sidebar() {
   const homeName = paths.home.split('/').pop() || 'Home'
 
   const favorites: Item[] = [
-    { label: 'Applications', path: paths.applications, icon: 'applications' },
     { label: 'Desktop',      path: paths.desktop,      icon: 'desktop' },
     { label: 'Documents',    path: paths.documents,    icon: 'documents' },
     { label: 'Downloads',    path: paths.downloads,    icon: 'downloads' },
@@ -103,6 +106,54 @@ export function Sidebar() {
           )
         })}
       </Group>
+
+      {/* PINNED */}
+      {pinned.length > 0 && (
+        <Group title="Pinned" collapsed={!!collapsed.Pinned} onToggle={() => toggle('Pinned')}>
+          {pinned.map((item) => {
+            const active = activeNav === item.path
+            return (
+              <div key={item.path} className="group/pin flex items-center">
+                <button
+                  onClick={() => navigate(item.path)}
+                  style={{ padding: '6px 8px' }}
+                  className={`${ITEM_BASE} flex-1 ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
+                >
+                  <svg className={`h-4 w-4 shrink-0 ${active ? 'text-white' : 'text-primary'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  <span className="flex-1 truncate">{item.label}</span>
+                </button>
+                <button
+                  onClick={() => removePin(item.path)}
+                  className="shrink-0 opacity-0 group-hover/pin:opacity-100 transition-opacity p-1 text-muted-foreground/60 hover:text-foreground rounded"
+                  title="Remove pin"
+                >
+                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+            )
+          })}
+        </Group>
+      )}
+
+      {/* RECENT FOLDERS */}
+      {recentFolders.length > 0 && (
+        <Group title="Recent Folders" collapsed={!!collapsed.RecentFolders} onToggle={() => toggle('RecentFolders')}>
+          {recentFolders.map((item) => {
+            const active = activeNav === item.path
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                style={{ padding: '6px 8px' }}
+                className={`${ITEM_BASE} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
+              >
+                <svg className={`h-4 w-4 shrink-0 ${active ? 'text-white' : 'text-muted-foreground/70'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+                <span className="flex-1 truncate">{item.name}</span>
+              </button>
+            )
+          })}
+        </Group>
+      )}
 
       {/* LOCATIONS */}
       <Group title="Locations" collapsed={!!collapsed.Locations} onToggle={() => toggle('Locations')}>

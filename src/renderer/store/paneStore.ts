@@ -19,6 +19,8 @@ type PaneStore = {
   activePaneId: 'left' | 'right'
   panes: { left: PaneState; right: PaneState }
   showHidden: boolean
+  syncPanes: boolean
+  setSyncPanes: (v: boolean) => void
   setActivePaneId: (id: 'left' | 'right') => void
   navigateTo: (id: 'left' | 'right', newPath: string) => void
   navigateBack: (id: 'left' | 'right') => void
@@ -49,28 +51,27 @@ export const usePaneStore = create<PaneStore>((set) => ({
   activePaneId: 'left',
   panes: { left: makePane('/'), right: makePane('/') },
   showHidden: false,
+  syncPanes: false,
   viewMode: 'icon',
 
   setViewMode: (mode) => set({ viewMode: mode }),
+  setSyncPanes: (v) => set({ syncPanes: v }),
 
   setActivePaneId: (id) => set({ activePaneId: id }),
 
   navigateTo: (id, newPath) =>
     set((s) => {
-      const pane = s.panes[id]
-      const newHistory = [...pane.history.slice(0, pane.historyIndex + 1), newPath]
+      function updatePane(pane: PaneState) {
+        const newHistory = [...pane.history.slice(0, pane.historyIndex + 1), newPath]
+        return { ...pane, path: newPath, selection: [], lastSelected: null, history: newHistory, historyIndex: newHistory.length - 1 }
+      }
+      const otherId = id === 'left' ? 'right' : 'left'
       return {
         activePaneId: id,
         panes: {
           ...s.panes,
-          [id]: {
-            ...pane,
-            path: newPath,
-            selection: [],
-            lastSelected: null,
-            history: newHistory,
-            historyIndex: newHistory.length - 1,
-          },
+          [id]: updatePane(s.panes[id]),
+          ...(s.syncPanes ? { [otherId]: updatePane(s.panes[otherId]) } : {}),
         },
       }
     }),

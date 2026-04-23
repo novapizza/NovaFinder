@@ -8,6 +8,8 @@ type Options = {
   onSelectAll?: () => void
   onGetInfo?: (p: string) => void
   onNewFolder?: () => void
+  onQuickLook?: (p: string) => void
+  onOpenInTerminal?: (p: string) => void
 }
 
 export function useKeyboard(options: Options = {}) {
@@ -56,6 +58,9 @@ export function useKeyboard(options: Options = {}) {
 
       if (meta && e.key === '1') { e.preventDefault(); setActivePaneId('left'); return }
       if (meta && e.key === '2') { e.preventDefault(); setActivePaneId('right'); return }
+
+      if (e.key === ' ' && sel.length === 1) { e.preventDefault(); options.onQuickLook?.(sel[0]); return }
+      if (meta && e.key === 't') { e.preventDefault(); options.onOpenInTerminal?.(pane.path); return }
     }
 
     window.addEventListener('keydown', handleKey)

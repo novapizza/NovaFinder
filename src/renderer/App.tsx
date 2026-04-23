@@ -38,6 +38,16 @@ export default function App() {
     onSelectAll: handleSelectAll,
     onGetInfo: (p) => setGlobalInfoPath(p),
     onNewFolder: () => newFolderFn.current?.(),
+    onQuickLook: (p) => {
+      if (previewFile?.path === p) {
+        setPreviewFile(null)
+      } else {
+        const ext = p.split('.').pop() ?? ''
+        setPreviewFile({ path: p, ext })
+        setShowPreview(true)
+      }
+    },
+    onOpenInTerminal: (dirPath) => window.fs.openInTerminal(dirPath),
   })
 
   return (

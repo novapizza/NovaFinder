@@ -14,7 +14,7 @@ type Props = {
 }
 
 export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, onNewFile }: Props) {
-  const { activePaneId, panes, navigateTo, navigateBack, navigateForward, navigateUp, showHidden, toggleHidden, viewMode, setViewMode } = usePaneStore()
+  const { activePaneId, panes, navigateTo, navigateBack, navigateForward, navigateUp, showHidden, toggleHidden, viewMode, setViewMode, syncPanes, setSyncPanes } = usePaneStore()
   const pane = panes[activePaneId]
   const [editing, setEditing] = useState(false)
   const [pathInput, setPathInput] = useState('')
@@ -56,7 +56,7 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
       <SortMenu />
 
       {/* Path breadcrumb / edit */}
-      <div className="ml-2 flex-1 min-w-0 max-w-[572px] [-webkit-app-region:no-drag]">
+      <div className="ml-2 flex-1 min-w-0 [-webkit-app-region:no-drag]">
         {isRecentsMode ? (
           <div className="w-full flex items-center px-3 py-1.5 rounded-lg min-h-[34px] border border-border/40 bg-surface-2/60">
             <span className="text-foreground font-medium text-[13px]">Recents</span>
@@ -97,7 +97,7 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
         )}
       </div>
 
-      <div className="flex-1 [-webkit-app-region:drag]" />
+      <div className="w-4 shrink-0 [-webkit-app-region:drag]" />
 
       {/* Right-side controls */}
       <div className="flex items-center gap-0.5 [-webkit-app-region:no-drag]">
@@ -169,3 +169,4 @@ function ListIcon()         { return <svg className="h-3.5 w-3.5" viewBox="0 0 2
 function DotIcon()          { return <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg> }
 function PreviewIcon()      { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" x2="15" y1="3" y2="21"/></svg> }
 function ChevronSmallIcon() { return <svg className="h-3 w-3 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg> }
+function SyncIcon()         { return <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg> }

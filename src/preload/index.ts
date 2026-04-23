@@ -36,6 +36,10 @@ contextBridge.exposeInMainWorld('fs', {
   writeFile: (p: string, content?: string) => ipcRenderer.invoke('fs:writeFile', p, content),
   searchRecursive: (dir: string, query: string, mode: 'name' | 'content' | 'kind' | 'size') =>
     ipcRenderer.invoke('fs:searchRecursive', dir, query, mode),
+  zip: (filePaths: string[]) => ipcRenderer.invoke('fs:zip', filePaths),
+  unzip: (zipPath: string) => ipcRenderer.invoke('fs:unzip', zipPath),
+  gitStatus: (dirPath: string) => ipcRenderer.invoke('fs:gitStatus', dirPath),
+  openInTerminal: (dirPath: string) => ipcRenderer.invoke('shell:openInTerminal', dirPath),
   watchStart: (p: string) => ipcRenderer.send('fs:watch:start', p),
   watchStop: (p: string) => ipcRenderer.send('fs:watch:stop', p),
   onWatchEvent: (cb: (e: { dirPath: string; eventType: string; filename: string }) => void) => {
@@ -72,6 +76,10 @@ declare global {
       writeClipboardText(text: string): Promise<void>
       writeFile(p: string, content?: string): Promise<void>
       searchRecursive(dir: string, query: string, mode: 'name' | 'content' | 'kind' | 'size'): Promise<FileEntry[]>
+      zip(filePaths: string[]): Promise<string>
+      unzip(zipPath: string): Promise<void>
+      gitStatus(dirPath: string): Promise<Record<string, string>>
+      openInTerminal(dirPath: string): Promise<void>
       watchStart(p: string): void
       watchStop(p: string): void
       onWatchEvent(cb: (e: { dirPath: string; eventType: string; filename: string }) => void): () => void
