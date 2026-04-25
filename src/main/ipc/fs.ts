@@ -3,7 +3,7 @@ import fs from 'fs/promises'
 import fsSync from 'fs'
 import path from 'path'
 import os from 'os'
-import { exec, execFile } from 'child_process'
+import { execFile } from 'child_process'
 
 export type FileEntry = {
   name: string
@@ -257,7 +257,7 @@ export function registerFsHandlers() {
   })
 
   ipcMain.handle('shell:openInTerminal', (_e, dirPath: string) => {
-    exec(`open -a Terminal ${JSON.stringify(dirPath)}`)
+    execFile('open', ['-a', 'Terminal', dirPath])
   })
 
   ipcMain.handle('fs:zip', async (_e, filePaths: string[]) => {
@@ -293,7 +293,7 @@ export function registerFsHandlers() {
 
   ipcMain.handle('fs:gitStatus', (_e, dirPath: string) => {
     return new Promise<Record<string, string>>((resolve) => {
-      exec(`git -C ${JSON.stringify(dirPath)} status --porcelain`, (err, stdout) => {
+      execFile('git', ['-C', dirPath, 'status', '--porcelain'], (err, stdout) => {
         if (err) { resolve({}); return }
         const result: Record<string, string> = {}
         for (const line of stdout.split('\n')) {

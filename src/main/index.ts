@@ -42,11 +42,11 @@ function buildMenu(win: BrowserWindow) {
     {
       label: 'View',
       submenu: [
-        {
+        ...(!app.isPackaged ? [{
           label: 'Toggle Developer Tools',
           accelerator: isMac ? 'Alt+Command+I' : 'Ctrl+Shift+I',
           click: () => { win.webContents.toggleDevTools() },
-        },
+        } as Electron.MenuItemConstructorOptions] : []),
         { type: 'separator' },
         { role: 'reload' },
         { role: 'forceReload' },
@@ -85,8 +85,9 @@ function createWindow() {
       preload: path.join(__dirname, '../preload/index.js'),
       sandbox: false,
       contextIsolation: true,
-      // webSecurity: false allows file:// URLs from localhost renderer (safe for local desktop app)
-      webSecurity: false,
+      // Disable webSecurity only in dev (localhost renderer can't load file:// otherwise).
+      // Production renderer loads from file:// so same-origin policy works natively.
+      webSecurity: !process.env['ELECTRON_RENDERER_URL'],
     },
   })
 
