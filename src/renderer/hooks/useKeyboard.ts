@@ -14,7 +14,7 @@ type Options = {
 
 export function useKeyboard(options: Options = {}) {
   const { activePaneId, panes, navigateBack, navigateForward, navigateUp, setActivePaneId, toggleHidden } = usePaneStore()
-  const { cut, copy, paste, deleteFiles, duplicate, copyPath } = useFileOps()
+  const { cut, copy, paste, deleteFiles, duplicate, copyPath } = useFileOps(options.onRefresh)
   const focusSearch = useSearchStore((s) => s.focusSearch)
 
   useEffect(() => {

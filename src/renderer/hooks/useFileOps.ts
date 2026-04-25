@@ -2,7 +2,7 @@ import path from 'path-browserify'
 import { usePaneStore } from '../store/paneStore'
 import { useClipboardStore } from '../store/clipboardStore'
 
-export function useFileOps() {
+export function useFileOps(onReload?: () => void) {
   const { panes, activePaneId, setSelection } = usePaneStore()
   const { files: clipFiles, operation, setCut, setCopy, clear } = useClipboardStore()
 
@@ -52,6 +52,7 @@ export function useFileOps() {
       }
     }
     if (operation === 'cut') clear()
+    onReload?.()
   }
 
   async function duplicate(paths: string[]) {
@@ -66,6 +67,7 @@ export function useFileOps() {
         alert(`Duplicate failed: ${e}`)
       }
     }
+    onReload?.()
   }
 
   async function copyPath(paths: string[]) {
@@ -77,21 +79,25 @@ export function useFileOps() {
       try { await window.fs.delete(p) } catch (e) { alert(`Delete failed: ${e}`) }
     }
     setSelection(activePaneId, [])
+    onReload?.()
   }
 
   async function newFolder(parentDir: string, name: string) {
     const finalName = await uniqueName(parentDir, name)
     await window.fs.mkdir(path.join(parentDir, finalName))
+    onReload?.()
   }
 
   async function newFile(parentDir: string, name: string) {
     const finalName = await uniqueName(parentDir, name)
     await window.fs.writeFile(path.join(parentDir, finalName), '')
+    onReload?.()
   }
 
   async function rename(filePath: string, newName: string) {
     const dir = path.dirname(filePath)
     await window.fs.rename(filePath, path.join(dir, newName))
+    onReload?.()
   }
 
   return { cut, copy, paste, duplicate, copyPath, deleteFiles, newFolder, newFile, rename }

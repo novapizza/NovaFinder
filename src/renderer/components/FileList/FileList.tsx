@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePaneStore, type SortKey } from '../../store/paneStore'
 import { useDirectory } from './useDirectory'
 import { FileRow } from './FileRow'
@@ -29,7 +29,7 @@ type Props = {
 type PendingNew = { type: 'folder' | 'file' }
 
 export function FileList({ paneId, onPreview, onClearPreview, registerReload, registerNewFolder, registerNewFile }: Props) {
-  const { panes, activePaneId, showHidden, viewMode, setActivePaneId, navigateTo, setSelection, setSort } = usePaneStore()
+  const { panes, activePaneId, showHidden, viewMode, setActivePaneId, navigateTo, navigateUp, setSelection, setSort } = usePaneStore()
   const pane = panes[paneId]
   const addRecent = useRecentsStore((s) => s.add)
   const recentEntries = useRecentsStore((s) => s.recents)
@@ -38,12 +38,13 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   const entries = isRecentsMode
     ? recentEntries.map((r) => ({ name: r.name, path: r.path, isDirectory: false, size: 0, modified: r.openedAt, ext: r.ext }))
     : dirEntries
-  const { rename, deleteFiles, paste, cut, copy, duplicate, copyPath, newFolder, newFile } = useFileOps()
+  const { rename, deleteFiles, paste, cut, copy, duplicate, copyPath, newFolder, newFile } = useFileOps(reload)
   const clipboard = useClipboardStore()
   const [menu, setMenu] = useState<{ x: number; y: number; path: string } | null>(null)
   const [renamingPath, setRenamingPath] = useState<string | null>(null)
   const [infoPath, setInfoPath] = useState<string | null>(null)
   const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const addRecentFolder = useRecentFoldersStore((s) => s.add)
   const { add: pinFolder } = usePinnedStore()
   const gitStatus = useGitStatus(isRecentsMode ? '' : pane.path)
@@ -80,6 +81,80 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   useEffect(() => {
     if (!isRecentsMode && pane.path) addRecentFolder(pane.path)
   }, [pane.path])
+
+  useEffect(() => {
+    function colCount() {
+      if (viewMode !== 'icon') return 1
+      const grid = scrollRef.current?.querySelector('.grid')
+      if (!grid) return 1
+      const items = grid.querySelectorAll<HTMLElement>(':scope > button, :scope > div')
+      if (items.length < 2) return items.length || 1
+      const firstTop = items[0].getBoundingClientRect().top
+      let cols = 0
+      for (const item of items) {
+        if (item.getBoundingClientRect().top === firstTop) cols++
+        else break
+      }
+      return Math.max(1, cols)
+    }
+
+    function selectIdx(idx: number) {
+      const entry = sorted[idx]
+      if (!entry) return
+      setSelection(paneId, [entry.path], entry.path)
+      if (!entry.isDirectory) {
+        addRecent({ path: entry.path, name: entry.name, ext: entry.ext })
+        onPreview(entry.path, entry.ext)
+      } else {
+        onClearPreview?.()
+      }
+    }
+
+    function onKey(e: KeyboardEvent) {
+      if (activePaneId !== paneId) return
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+
+      const cols = colCount()
+      const anchor = pane.lastSelected ?? pane.selection[pane.selection.length - 1]
+      const idx = anchor ? sorted.findIndex((en) => en.path === anchor) : -1
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        if (!sorted.length) return
+        selectIdx(Math.max(0, idx < 0 ? 0 : idx - cols))
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        if (!sorted.length) return
+        selectIdx(Math.min(sorted.length - 1, idx < 0 ? 0 : idx + cols))
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        if (viewMode === 'icon') {
+          if (!sorted.length) return
+          selectIdx(Math.max(0, idx < 0 ? 0 : idx - 1))
+        } else {
+          navigateUp(paneId)
+        }
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        if (viewMode === 'icon') {
+          if (!sorted.length) return
+          selectIdx(Math.min(sorted.length - 1, idx < 0 ? 0 : idx + 1))
+        } else if (pane.selection.length === 1) {
+          const entry = sorted.find((en) => en.path === pane.selection[0])
+          if (entry?.isDirectory) navigateTo(paneId, entry.path)
+        }
+      } else if (e.key === 'Enter' && pane.selection.length === 1) {
+        e.preventDefault()
+        const entry = sorted.find((en) => en.path === pane.selection[0])
+        if (entry) handleOpen(entry)
+      }
+    }
+
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [activePaneId, paneId, sorted, pane.selection, pane.lastSelected, viewMode])
 
   async function commitPending(name: string) {
     if (!pendingNew) return
@@ -189,8 +264,8 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
           ...(targetIsDir ? [{ label: 'Open in Terminal', icon: 'open' as const, action: () => window.fs.openInTerminal(menuTargets[0]) }] : []),
           { label: 'Move to Trash', icon: 'trash', action: () => deleteFiles(menuTargets), danger: true },
           { separator: true },
-          { label: `Compress ${countLabel}`, icon: 'duplicate', action: () => window.fs.zip(menuTargets).catch(() => {}) },
-          ...(targetIsZip && menuTargets.length === 1 ? [{ label: 'Extract Here', icon: 'open' as const, action: () => window.fs.unzip(menuTargets[0]).catch(() => {}) }] : []),
+          { label: `Compress ${countLabel}`, icon: 'duplicate', action: () => window.fs.zip(menuTargets).then(reload).catch(() => {}) },
+          ...(targetIsZip && menuTargets.length === 1 ? [{ label: 'Extract Here', icon: 'open' as const, action: () => window.fs.unzip(menuTargets[0]).then(reload).catch(() => {}) }] : []),
           { separator: true },
           ...(targetIsDir && menuTargets.length === 1 ? [{ label: 'Pin to Sidebar', icon: 'copy-path' as const, action: () => pinFolder(menuTargets[0], menuTargets[0].split('/').pop() ?? menuTargets[0]) }] : []),
           { label: 'Get Info', icon: 'info', action: () => setInfoPath(menuTargets[0]) },
@@ -243,6 +318,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
       )}
 
       <div
+        ref={scrollRef}
         className="flex-1 overflow-y-auto scrollbar-thin"
         onClick={(e) => { if (e.target === e.currentTarget) clearSelection() }}
       >
