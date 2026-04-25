@@ -4,6 +4,8 @@ import { registerFsHandlers } from './ipc/fs'
 import { registerWatcherHandlers, stopAllWatchers } from './ipc/watcher'
 import { registerTagsHandlers } from './ipc/tags'
 
+app.setName('NovaFinder')
+
 function buildMenu(win: BrowserWindow) {
   const isMac = process.platform === 'darwin'
 
@@ -67,7 +69,10 @@ function buildMenu(win: BrowserWindow) {
 }
 
 function createWindow() {
-  const iconPath = path.join(app.getAppPath(), 'assets', 'icon.png')
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'icon.png')
+    : path.join(app.getAppPath(), 'assets', 'icon.png')
+  if (process.platform === 'darwin') app.dock.setIcon(iconPath)
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
