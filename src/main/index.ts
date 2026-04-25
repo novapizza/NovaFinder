@@ -91,9 +91,7 @@ function createWindow() {
     },
   })
 
-  registerFsHandlers()
   registerWatcherHandlers(win)
-  registerTagsHandlers()
   buildMenu(win)
 
   if (process.env['ELECTRON_RENDERER_URL']) {
@@ -106,6 +104,8 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  registerFsHandlers()
+  registerTagsHandlers()
   createWindow()
 })
 
