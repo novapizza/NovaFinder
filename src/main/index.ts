@@ -67,6 +67,7 @@ function buildMenu(win: BrowserWindow) {
 }
 
 function createWindow() {
+  const iconPath = path.join(app.getAppPath(), 'assets', 'icon.png')
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -74,6 +75,7 @@ function createWindow() {
     minHeight: 500,
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#0a0a0a',
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       sandbox: false,

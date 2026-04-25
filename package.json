@@ -36,11 +36,15 @@
     "productName": "NovaDirectory",
     "mac": {
       "target": "dmg",
-      "category": "public.app-category.utilities"
+      "category": "public.app-category.utilities",
+      "icon": "assets/icon.png"
     },
     "files": [
       "dist/**/*",
       "dist-electron/**/*"
+    ],
+    "extraResources": [
+      { "from": "assets/icon.png", "to": "icon.png" }
     ]
   }
 }
