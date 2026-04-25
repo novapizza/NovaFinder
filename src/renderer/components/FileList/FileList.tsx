@@ -3,6 +3,7 @@ import { usePaneStore, type SortKey } from '../../store/paneStore'
 import { useDirectory } from './useDirectory'
 import { FileRow } from './FileRow'
 import { FileGrid } from './FileGrid'
+import { ColumnView } from './ColumnView'
 import { useFileOps } from '../../hooks/useFileOps'
 import { sortEntries } from '../../lib/sort'
 import { ContextMenu, type MenuItem } from '../ContextMenu'
@@ -214,6 +215,16 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
         ]
 
   const folderName = isRecentsMode ? 'Recents' : pane.path === '/' ? '/' : pane.path.split('/').filter(Boolean).pop() ?? pane.path
+
+  if (viewMode === 'column') {
+    return (
+      <ColumnView
+        paneId={paneId}
+        onPreview={onPreview}
+        onClearPreview={onClearPreview}
+      />
+    )
+  }
 
   return (
     <div

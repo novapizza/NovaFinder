@@ -72,7 +72,7 @@ function PendingTile({ type, onCommit, onCancel }: { type: 'folder' | 'file'; on
           ? 'bg-gradient-to-br from-primary/80 to-primary/40 shadow-elevated'
           : 'bg-surface-2 ring-1 ring-border/60',
       ].join(' ')}>
-        <FileIcon ext={type === 'file' ? 'txt' : ''} isDirectory={type === 'folder'} size={type === 'folder' ? 32 : 28} />
+        <FileIcon ext={type === 'file' ? 'txt' : ''} isDirectory={type === 'folder'} size={type === 'folder' ? 38 : 34} />
       </div>
       <input
         autoFocus
@@ -146,7 +146,7 @@ function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, 
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         ) : (
-          <FileIcon ext={entry.ext} isDirectory={entry.isDirectory} size={entry.isDirectory ? 32 : 28} />
+          <FileIcon ext={entry.ext} isDirectory={entry.isDirectory} size={entry.isDirectory ? 38 : 34} />
         )}
       </div>
 

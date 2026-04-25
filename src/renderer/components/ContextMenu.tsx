@@ -34,10 +34,10 @@ export function ContextMenu({ x, y, items, onClose }: Props) {
     }
   }, [onClose])
 
-  const MENU_W = 240
+  const MENU_W = 260
   const itemCount = items.filter((i) => !('separator' in i && i.separator)).length
   const sepCount = items.filter((i) => 'separator' in i && i.separator).length
-  const approxH = itemCount * 26 + sepCount * 9 + 10
+  const approxH = itemCount * 30 + sepCount * 9 + 12
 
   const style: React.CSSProperties = {
     position: 'fixed',
@@ -56,7 +56,7 @@ export function ContextMenu({ x, y, items, onClose }: Props) {
     >
       {items.map((item, i) => {
         if ('separator' in item && item.separator) {
-          return <div key={i} className="my-1 mx-2 border-t border-white/10 dark:border-white/10" />
+          return <div key={i} className="my-[5px] mx-2 border-t border-white/10 dark:border-white/10" />
         }
         if ('tagsRow' in item && item.tagsRow) {
           return <TagsRow key={i} selectedColors={item.selectedColors} onToggle={(c) => { item.onToggle(c); if (item.closeOnToggle) onClose() }} />
@@ -68,14 +68,14 @@ export function ContextMenu({ x, y, items, onClose }: Props) {
             disabled={it.disabled}
             onClick={() => { it.action(); onClose() }}
             className={[
-              'group w-full flex items-center gap-2 px-3 py-[5px] rounded-md transition-colors text-left',
+              'group w-full flex items-center gap-2.5 px-3.5 py-[7px] rounded-md transition-colors text-left',
               it.disabled ? 'opacity-40 cursor-default' :
               it.danger ? 'text-red-400 hover:bg-red-500 hover:text-white' :
               'hover:bg-[var(--accent)] hover:text-white',
             ].join(' ')}
           >
-            <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center opacity-80 group-hover:opacity-100">
-              {it.icon ? <MenuIconSvg name={it.icon} /> : <span className="w-4" />}
+            <span className="w-[22px] h-[22px] flex-shrink-0 flex items-center justify-center opacity-75 group-hover:opacity-100">
+              {it.icon ? <MenuIconSvg name={it.icon} /> : <span className="w-[22px]" />}
             </span>
             <span className="flex-1 truncate">{it.label}</span>
           </button>
@@ -120,7 +120,7 @@ function TagsRow({ selectedColors, onToggle }: { selectedColors: string[]; onTog
 }
 
 function MenuIconSvg({ name }: { name: MenuIcon }) {
-  const common = { width: 14, height: 14, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  const common = { width: 18, height: 18, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
 
   switch (name) {
     case 'open':

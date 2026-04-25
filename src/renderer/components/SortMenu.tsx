@@ -36,7 +36,7 @@ export function SortMenu() {
           className="w-[48px] h-[48px] flex items-center justify-center rounded-md text-[var(--text-soft)] hover:bg-[var(--hover)] transition-colors"
           aria-label="Sort"
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 6h12" />
             <path d="M6 10h8" />
             <path d="M8 14h4" />
@@ -44,8 +44,11 @@ export function SortMenu() {
         </button>
       </Tooltip>
       {open && (
-        <div className="absolute right-0 top-full mt-1 nd-context-menu rounded-[10px] py-1 text-[13px] min-w-[180px] shadow-[0_14px_48px_rgba(0,0,0,0.35)] z-[9999]">
-          <div className="px-3 pt-1 pb-0.5 text-[11px] font-semibold text-[var(--text-muted)]">Sort By</div>
+        <div
+          className="absolute right-0 top-full mt-1 nd-context-menu rounded-[10px] text-[13px] min-w-[240px] shadow-[0_14px_48px_rgba(0,0,0,0.35),0_2px_8px_rgba(0,0,0,0.2)] z-[9999]"
+          style={{ padding: '6px 4px' }}
+        >
+          <div className="px-3 pb-[3px] pt-[2px] text-[11px] font-semibold text-muted-foreground">Sort By</div>
           {OPTIONS.map((opt) => {
             const active = pane.sortKey === opt.key
             return (
@@ -53,28 +56,28 @@ export function SortMenu() {
                 key={opt.key}
                 onClick={() => choose(opt.key)}
                 className={[
-                  'w-full flex items-center justify-between px-3 py-1 text-left transition-colors',
-                  active ? 'text-[var(--text)]' : 'text-[var(--text)] hover:bg-[var(--accent)] hover:text-white',
+                  'w-full flex items-center justify-between gap-2.5 px-3 py-[7px] rounded-md transition-colors text-left whitespace-nowrap',
+                  active ? 'text-foreground' : 'text-foreground hover:bg-[var(--accent)] hover:text-white',
                 ].join(' ')}
               >
-                <span className="flex items-center gap-2">
-                  <span className="w-3 text-[var(--accent)]">{active ? '✓' : ''}</span>
+                <span className="flex items-center gap-2.5">
+                  <span className="w-3.5 text-primary">{active ? '✓' : ''}</span>
                   {opt.label}
                 </span>
                 {active && (
-                  <span className="text-[var(--text-muted)] text-[11px]">
+                  <span className="text-muted-foreground text-[11px]">
                     {pane.sortDir === 'asc' ? '▲' : '▼'}
                   </span>
                 )}
               </button>
             )
           })}
-          <div className="my-1 mx-2 border-t border-white/10" />
+          <div className="my-[5px] mx-2 border-t border-white/10" />
           <button
             onClick={() => choose(pane.sortKey)}
-            className="w-full text-left px-3 py-1 text-[var(--text)] hover:bg-[var(--accent)] hover:text-white transition-colors"
+            className="w-full text-left px-3 py-[7px] rounded-md text-foreground hover:bg-[var(--accent)] hover:text-white transition-colors whitespace-nowrap"
           >
-            Reverse Direction ({pane.sortDir === 'asc' ? 'A→Z / Old→New' : 'Z→A / New→Old'})
+            {pane.sortDir === 'asc' ? 'Sort Z→A / New→Old' : 'Sort A→Z / Old→New'}
           </button>
         </div>
       )}

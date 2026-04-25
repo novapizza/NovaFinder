@@ -66,7 +66,7 @@ export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContext
       onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onContextMenu(e, entry.path) }}
     >
       <span className="flex-shrink-0 flex items-center justify-center w-7 h-7">
-        <FileIcon ext={entry.ext} isDirectory={entry.isDirectory} size={22} />
+        <FileIcon ext={entry.ext} isDirectory={entry.isDirectory} size={26} />
       </span>
 
       {editing ? (
