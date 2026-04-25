@@ -21,7 +21,7 @@ export function Sidebar() {
   const [paths, setPaths] = useState<SpecialPaths | null>(null)
   const [volumes, setVolumes] = useState<string[]>([])
   const tagMap = useTagStore((s) => s.map)
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ RecentFolders: true })
   const hasRecents = useRecentsStore((s) => s.recents.length > 0)
   const { pinned, remove: removePin } = usePinnedStore()
   const recentFolders = useRecentFoldersStore((s) => s.folders)
