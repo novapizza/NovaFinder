@@ -33,19 +33,29 @@ function Folder({ size }: IconProps) {
     <svg width={size} height={size} viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="ndFolderTab" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#A9D4F6" />
-          <stop offset="1" stopColor="#6FA9D9" />
+          <stop offset="0" stopColor="var(--folder-tab-top)" />
+          <stop offset="1" stopColor="var(--folder-tab-bot)" />
         </linearGradient>
         <linearGradient id="ndFolderBody" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#86C1F0" />
-          <stop offset="0.45" stopColor="#6AAEE2" />
-          <stop offset="1" stopColor="#4E95CD" />
+          <stop offset="0" stopColor="var(--folder-body-top)" />
+          <stop offset="0.45" stopColor="var(--folder-body-mid)" />
+          <stop offset="1" stopColor="var(--folder-body-bot)" />
         </linearGradient>
       </defs>
       {/* back tab */}
-      <path d="M3 7.5a2 2 0 0 1 2-2h7.5l2.2 2.2h12.3a2 2 0 0 1 2 2v14.3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7.5z" fill="url(#ndFolderTab)" />
+      <path
+        d="M3 7.5a2 2 0 0 1 2-2h7.5l2.2 2.2h12.3a2 2 0 0 1 2 2v14.3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7.5z"
+        fill="url(#ndFolderTab)"
+        stroke="var(--folder-stroke)"
+        strokeWidth="0.5"
+      />
       {/* front flap */}
-      <path d="M3 12a2 2 0 0 1 2-2h22a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V12z" fill="url(#ndFolderBody)" />
+      <path
+        d="M3 12a2 2 0 0 1 2-2h22a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V12z"
+        fill="url(#ndFolderBody)"
+        stroke="var(--folder-stroke)"
+        strokeWidth="0.5"
+      />
       {/* subtle top highlight */}
       <path d="M5 10.5h22a2 2 0 0 1 2 2V13H3v-0.5a2 2 0 0 1 2-2z" fill="#ffffff" opacity="0.25" />
     </svg>

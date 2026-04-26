@@ -218,7 +218,7 @@ function Suggestion({ children, onClick, active }: { children: React.ReactNode; 
       onClick={onClick}
       className={[
         'w-full text-left px-3 py-1 text-[13px] transition-colors flex items-center gap-1',
-        active ? 'bg-[var(--accent)] text-white' : 'hover:bg-[var(--accent)] hover:text-white',
+        active ? 'bg-[var(--accent-color)] text-white' : 'hover:bg-[var(--accent-color)] hover:text-white',
       ].join(' ')}
     >
       {children}

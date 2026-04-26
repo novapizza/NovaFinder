@@ -18,6 +18,16 @@ export function formatDate(ms: number): string {
   })
 }
 
+/** Coarse, sidebar-friendly format: always GB or TB, rounded. */
+export function formatBytesCoarse(bytes: number): string {
+  const TB = 1024 ** 4
+  const GB = 1024 ** 3
+  if (bytes >= TB) return `${(bytes / TB).toFixed(bytes >= 10 * TB ? 0 : 1)} TB`
+  if (bytes >= GB) return `${Math.round(bytes / GB).toLocaleString()} GB`
+  const MB = 1024 ** 2
+  return `${Math.round(bytes / MB)} MB`
+}
+
 export function novaFileUrl(filePath: string): string {
   // Use file:// directly; webSecurity: false in BrowserWindow allows this from localhost renderer
   return `file://${filePath}`

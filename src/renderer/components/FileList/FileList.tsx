@@ -260,7 +260,16 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
             },
           },
           { label: 'Open with Default App', icon: 'open-default', action: () => window.fs.open(menuTargets[0]) },
-          { label: 'Reveal in Finder', icon: 'reveal', action: () => window.fs.showItemInFolder(menuTargets[0]) },
+          {
+            label: 'Reveal in NovaFinder',
+            icon: 'reveal',
+            action: () => {
+              const target = menuTargets[0]
+              const parent = target.replace(/\/[^/]+\/?$/, '') || '/'
+              if (parent !== pane.path) navigateTo(paneId, parent)
+              setSelection(paneId, [target], target)
+            },
+          },
           ...(targetIsDir ? [{ label: 'Open in Terminal', icon: 'open' as const, action: () => window.fs.openInTerminal(menuTargets[0]) }] : []),
           { label: 'Move to Trash', icon: 'trash', action: () => deleteFiles(menuTargets), danger: true },
           { separator: true },
@@ -289,8 +298,6 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
           },
         ]
 
-  const folderName = isRecentsMode ? 'Recents' : pane.path === '/' ? '/' : pane.path.split('/').filter(Boolean).pop() ?? pane.path
-
   if (viewMode === 'column') {
     return (
       <ColumnView
@@ -307,12 +314,6 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
       onClick={() => setActivePaneId(paneId)}
       onContextMenu={handleBgContextMenu}
     >
-      {/* Pane header */}
-      <div className="flex items-center justify-between border-b border-border/40 bg-surface-1/30 px-3 py-2 flex-shrink-0">
-        <span className="text-xs font-semibold text-foreground truncate">{folderName}</span>
-        <span className="text-[11px] text-muted-foreground ml-2 flex-shrink-0">{sorted.length} items</span>
-      </div>
-
       {viewMode === 'list' && (
         <HeaderRow sortKey={pane.sortKey} sortDir={pane.sortDir} onSort={(k) => setSort(paneId, k)} />
       )}

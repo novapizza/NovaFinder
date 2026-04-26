@@ -105,6 +105,14 @@ export function registerFsHandlers() {
 
   ipcMain.handle('fs:homedir', () => os.homedir())
 
+  ipcMain.handle('fs:diskUsage', async (_e, p: string) => {
+    const stats = await fs.statfs(p)
+    const total = stats.blocks * stats.bsize
+    const free = stats.bavail * stats.bsize
+    const used = total - free
+    return { total, free, used }
+  })
+
   ipcMain.handle('fs:specialPaths', () => {
     const home = os.homedir()
     return {

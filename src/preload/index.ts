@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('fs', {
   mkdir: (p: string) => ipcRenderer.invoke('fs:mkdir', p),
   open: (p: string) => ipcRenderer.invoke('fs:open', p),
   homedir: () => ipcRenderer.invoke('fs:homedir'),
+  diskUsage: (p: string) => ipcRenderer.invoke('fs:diskUsage', p),
   specialPaths: () => ipcRenderer.invoke('fs:specialPaths'),
   exists: (p: string) => ipcRenderer.invoke('fs:exists', p),
   showItemInFolder: (p: string) => ipcRenderer.invoke('fs:showItemInFolder', p),
@@ -69,6 +70,7 @@ declare global {
       mkdir(p: string): Promise<void>
       open(p: string): Promise<void>
       homedir(): Promise<string>
+      diskUsage(p: string): Promise<{ total: number; free: number; used: number }>
       specialPaths(): Promise<SpecialPaths>
       exists(p: string): Promise<boolean>
       showItemInFolder(p: string): Promise<void>

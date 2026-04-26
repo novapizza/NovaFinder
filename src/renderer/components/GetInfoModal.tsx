@@ -47,10 +47,10 @@ export function GetInfoModal({ filePath, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="bg-[var(--bg)] border border-[var(--border)] rounded-lg shadow-2xl w-[340px] overflow-hidden"
+        className="bg-[var(--bg)] border border-[var(--border-color)] rounded-lg shadow-2xl w-[340px] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-[var(--border)]">
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-[var(--border-color)]">
           <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
             <FileIcon ext={ext} isDirectory={!!info?.isDirectory} size={44} />
           </div>
@@ -74,10 +74,10 @@ export function GetInfoModal({ filePath, onClose }: Props) {
           {info && <Row label="Modified" value={formatDate(info.modified)} />}
         </div>
 
-        <div className="flex justify-end px-4 py-3 border-t border-[var(--border)] bg-[var(--header-bg)]">
+        <div className="flex justify-end px-4 py-3 border-t border-[var(--border-color)] bg-[var(--header-bg)]">
           <button
             onClick={onClose}
-            className="px-4 py-1 rounded-md bg-[var(--accent)] text-white text-[12px] hover:brightness-110"
+            className="px-4 py-1 rounded-md bg-[var(--accent-color)] text-white text-[12px] hover:brightness-110"
           >
             Close
           </button>

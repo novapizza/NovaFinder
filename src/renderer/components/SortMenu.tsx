@@ -57,7 +57,7 @@ export function SortMenu() {
                 onClick={() => choose(opt.key)}
                 className={[
                   'w-full flex items-center justify-between gap-2.5 px-3 py-[7px] rounded-md transition-colors text-left whitespace-nowrap',
-                  active ? 'text-foreground' : 'text-foreground hover:bg-[var(--accent)] hover:text-white',
+                  active ? 'text-foreground' : 'text-foreground hover:bg-[var(--accent-color)] hover:text-white',
                 ].join(' ')}
               >
                 <span className="flex items-center gap-2.5">
@@ -75,7 +75,7 @@ export function SortMenu() {
           <div className="my-[5px] mx-2 border-t border-white/10" />
           <button
             onClick={() => choose(pane.sortKey)}
-            className="w-full text-left px-3 py-[7px] rounded-md text-foreground hover:bg-[var(--accent)] hover:text-white transition-colors whitespace-nowrap"
+            className="w-full text-left px-3 py-[7px] rounded-md text-foreground hover:bg-[var(--accent-color)] hover:text-white transition-colors whitespace-nowrap"
           >
             {pane.sortDir === 'asc' ? 'Sort Z→A / New→Old' : 'Sort A→Z / Old→New'}
           </button>

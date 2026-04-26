@@ -30,7 +30,7 @@ export function PromptModal() {
       onClick={() => close(null)}
     >
       <div
-        className="bg-[var(--bg)] border border-[var(--border)] rounded-xl shadow-2xl w-[380px] overflow-hidden"
+        className="bg-[var(--bg)] border border-[var(--border-color)] rounded-xl shadow-2xl w-[380px] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 pt-5 pb-3">
@@ -46,19 +46,19 @@ export function PromptModal() {
               if (e.key === 'Enter') submit()
               if (e.key === 'Escape') close(null)
             }}
-            className="mt-3 w-full bg-[var(--input-bg)] border border-[var(--border)] focus:border-[var(--accent)] text-[var(--text)] text-[13px] px-3 py-1.5 rounded-md outline-none"
+            className="mt-3 w-full bg-[var(--input-bg)] border border-[var(--border-color)] focus:border-[var(--accent-color)] text-[var(--text)] text-[13px] px-3 py-1.5 rounded-md outline-none"
           />
         </div>
-        <div className="flex justify-end gap-2 px-4 py-3 bg-[var(--header-bg)] border-t border-[var(--border)]">
+        <div className="flex justify-end gap-2 px-4 py-3 bg-[var(--header-bg)] border-t border-[var(--border-color)]">
           <button
             onClick={() => close(null)}
-            className="px-4 py-1 rounded-md bg-[var(--hover)] text-[var(--text)] text-[12px] hover:bg-[var(--border)] min-w-[72px]"
+            className="px-4 py-1 rounded-md bg-[var(--hover)] text-[var(--text)] text-[12px] hover:bg-[var(--border-color)] min-w-[72px]"
           >
             Cancel
           </button>
           <button
             onClick={submit}
-            className="px-4 py-1 rounded-md bg-[var(--accent)] text-white text-[12px] hover:brightness-110 min-w-[72px]"
+            className="px-4 py-1 rounded-md bg-[var(--accent-color)] text-white text-[12px] hover:brightness-110 min-w-[72px]"
           >
             {current.confirmLabel ?? 'OK'}
           </button>

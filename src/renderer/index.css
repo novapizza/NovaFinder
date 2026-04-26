@@ -1,91 +1,205 @@
 @import "tailwindcss";
 
-/* ─── Tailwind v4 theme — enables bg-surface-2, text-muted-foreground, shadow-window, etc. ─── */
-@theme {
-  /* Core palette */
-  --color-background:          hsl(220 18% 10%);
-  --color-foreground:          hsl(210 20% 96%);
-  --color-surface-1:           hsl(220 16% 13%);
-  --color-surface-2:           hsl(220 14% 17%);
-  --color-surface-3:           hsl(220 12% 22%);
-  --color-muted:               hsl(220 12% 18%);
-  --color-muted-foreground:    hsl(215 12% 58%);
+/* ─────────────────────────────────────────────────────────────
+   Design tokens — Halo-Finder system, ported from FinderRef.
+   Theme switches via `.light` / `.dark` class on <html>.
+   Dark is default.
+   ───────────────────────────────────────────────────────────── */
 
-  /* Primary (interactive blue) */
-  --color-primary:             hsl(211 100% 60%);
-  --color-primary-foreground:  hsl(0 0% 100%);
-  --color-primary-glow:        hsl(211 100% 70%);
+@layer base {
+  :root,
+  .dark {
+    --background: 220 18% 10%;
+    --foreground: 210 20% 96%;
 
-  /* Sidebar / titlebar */
-  --color-sidebar:             hsl(220 18% 9%);
-  --color-titlebar:            hsl(220 20% 8%);
+    --surface-1: 220 16% 13%;
+    --surface-2: 220 14% 17%;
+    --surface-3: 220 12% 22%;
 
-  /* Borders & inputs */
-  --color-border:              hsl(220 12% 22%);
-  --color-input:               hsl(220 12% 18%);
-  --color-ring:                hsl(211 100% 60%);
+    --card: 220 16% 13%;
+    --card-foreground: 210 20% 96%;
 
-  /* Semantic */
-  --color-destructive:         hsl(0 72% 58%);
-  --color-destructive-foreground: hsl(0 0% 100%);
-  --color-success:             hsl(142 70% 48%);
-  --color-warning:             hsl(38 92% 56%);
+    --popover: 220 16% 14%;
+    --popover-foreground: 210 20% 96%;
 
-  /* Traffic lights */
-  --color-traffic-red:         hsl(0 78% 62%);
-  --color-traffic-yellow:      hsl(42 95% 58%);
-  --color-traffic-green:       hsl(134 60% 52%);
+    --primary: 211 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 211 100% 70%;
 
-  /* Shadows */
-  --shadow-window:   0 30px 60px -20px hsl(0 0% 0% / 0.6), 0 0 0 1px hsl(220 12% 30% / 0.5);
-  --shadow-elevated: 0 8px 24px -8px hsl(0 0% 0% / 0.5);
-  --shadow-glow:     0 0 30px hsl(211 100% 60% / 0.3);
-}
+    --secondary: 220 12% 22%;
+    --secondary-foreground: 210 20% 96%;
 
-/* ─── CSS variables for backward-compat with existing var() usages ─── */
-:root {
-  --bg:            hsl(220 18% 10%);
-  --sidebar-bg:    hsl(220 18% 9%);
-  --toolbar-bg:    hsl(220 20% 8%);
-  --header-bg:     hsl(220 16% 13%);
-  --input-bg:      hsl(220 12% 18%);
-  --border:        hsl(220 12% 22%);
-  --hover:         hsl(220 14% 17%);
+    --muted: 220 12% 18%;
+    --muted-foreground: 215 12% 62%;
 
-  --text:          hsl(210 20% 96%);
-  --text-soft:     hsl(210 15% 78%);
-  --text-muted:    hsl(215 12% 58%);
-  --text-disabled: hsl(215 10% 38%);
+    --accent: 280 80% 65%;
+    --accent-foreground: 0 0% 100%;
 
-  --accent:        hsl(211 100% 60%);
-  --accent-bg:     hsl(211 100% 60% / 0.14);
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 70% 48%;
+    --warning: 38 92% 56%;
 
-  /* Tag colours */
-  --tag-red:    hsl(0 78% 62%);
-  --tag-orange: hsl(28 95% 58%);
-  --tag-yellow: hsl(42 95% 56%);
-  --tag-green:  hsl(134 60% 52%);
-  --tag-blue:   hsl(211 100% 60%);
-  --tag-purple: hsl(280 80% 65%);
-  --tag-gray:   hsl(220 10% 58%);
-}
+    --border: 220 12% 22%;
+    --input: 220 12% 18%;
+    --ring: 211 100% 60%;
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg:          hsl(220 20% 96%);
-    --sidebar-bg:  hsl(220 16% 92%);
-    --toolbar-bg:  hsl(220 16% 90%);
-    --header-bg:   hsl(0 0% 100%);
-    --input-bg:    hsl(0 0% 100%);
-    --border:      hsl(220 12% 85%);
-    --hover:       hsl(220 16% 94%);
+    --radius: 0.625rem;
+
+    --traffic-red: 0 78% 62%;
+    --traffic-yellow: 42 95% 58%;
+    --traffic-green: 134 60% 52%;
+
+    --sidebar-bg: 220 18% 9%;
+    --titlebar-bg: 220 20% 8%;
+
+    --shadow-window: 0 30px 60px -20px hsl(0 0% 0% / 0.6), 0 0 0 1px hsl(220 12% 30% / 0.5);
+    --shadow-elevated: 0 8px 24px -8px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 30px hsl(211 100% 60% / 0.3);
+
+    /* Backward-compat plain vars used in inline styles */
+    --bg:            hsl(220 18% 10%);
+    --sidebar-bg-color: hsl(220 18% 9%);
+    --toolbar-bg:    hsl(220 20% 8%);
+    --header-bg:     hsl(220 16% 13%);
+    --input-bg:      hsl(220 12% 18%);
+    --border-color:  hsl(220 12% 22%);
+    --hover:         hsl(220 14% 17%);
+    --text:          hsl(210 20% 96%);
+    --text-soft:     hsl(210 15% 78%);
+    --text-muted:    hsl(215 12% 62%);
+    --text-disabled: hsl(215 10% 38%);
+    --accent-color:  hsl(211 100% 60%);
+    --accent-bg:     hsl(211 100% 60% / 0.14);
+
+    /* Tag colours */
+    --tag-red:    hsl(0 78% 62%);
+    --tag-orange: hsl(28 95% 58%);
+    --tag-yellow: hsl(42 95% 56%);
+    --tag-green:  hsl(134 60% 52%);
+    --tag-blue:   hsl(211 100% 60%);
+    --tag-purple: hsl(280 80% 65%);
+    --tag-gray:   hsl(220 10% 58%);
+
+    /* Body backdrop gradients */
+    --backdrop:
+      radial-gradient(ellipse at top left,    hsl(211 100% 60% / 0.12), transparent 55%),
+      radial-gradient(ellipse at bottom right, hsl(280 80% 65% / 0.10), transparent 55%);
+    --backdrop-base: hsl(240 28% 8%);
+
+    /* Folder icon palette */
+    --folder-tab-top:   #A9D4F6;
+    --folder-tab-bot:   #6FA9D9;
+    --folder-body-top:  #86C1F0;
+    --folder-body-mid:  #6AAEE2;
+    --folder-body-bot:  #4E95CD;
+    --folder-stroke:    transparent;
+  }
+
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 220 18% 12%;
+
+    --surface-1: 0 0% 100%;
+    --surface-2: 220 16% 95%;
+    --surface-3: 220 14% 88%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 18% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 18% 12%;
+
+    --secondary: 220 14% 92%;
+    --secondary-foreground: 220 18% 12%;
+
+    --muted: 220 12% 94%;
+    --muted-foreground: 220 10% 38%;
+
+    --sidebar-bg: 220 16% 94%;
+    --titlebar-bg: 220 16% 92%;
+
+    --border: 220 12% 85%;
+    --input: 220 12% 85%;
+
+    --shadow-window: 0 30px 60px -20px hsl(220 30% 30% / 0.25), 0 0 0 1px hsl(220 12% 80% / 0.6);
+    --shadow-elevated: 0 6px 20px -6px hsl(220 30% 30% / 0.18);
+    --shadow-glow: 0 0 24px hsl(211 100% 50% / 0.25);
+
+    --bg:            hsl(0 0% 98%);
+    --sidebar-bg-color: hsl(220 16% 94%);
+    --toolbar-bg:    hsl(220 16% 92%);
+    --header-bg:     hsl(0 0% 100%);
+    --input-bg:      hsl(0 0% 100%);
+    --border-color:  hsl(220 12% 85%);
+    --hover:         hsl(220 16% 94%);
     --text:          hsl(220 18% 12%);
     --text-soft:     hsl(220 12% 30%);
     --text-muted:    hsl(220 10% 48%);
     --text-disabled: hsl(220 8% 68%);
-    --accent:    hsl(211 100% 50%);
-    --accent-bg: hsl(211 100% 50% / 0.1);
+    --accent-color:  hsl(211 100% 50%);
+    --accent-bg:     hsl(211 100% 50% / 0.10);
+
+    --backdrop:
+      radial-gradient(ellipse at top left,    hsl(211 100% 60% / 0.08), transparent 60%),
+      radial-gradient(ellipse at bottom right, hsl(280 80% 65% / 0.08), transparent 60%);
+    --backdrop-base: hsl(220 20% 96%);
+
+    /* Folder icon palette — deeper saturation for legibility on light bg */
+    --folder-tab-top:   #4DA8FF;
+    --folder-tab-bot:   #1F6FB3;
+    --folder-body-top:  #3D9BEF;
+    --folder-body-mid:  #1F7BD0;
+    --folder-body-bot:  #1561A6;
+    --folder-stroke:    rgba(15, 76, 130, 0.35);
   }
+}
+
+/* ─── Tailwind v4 theme — wires CSS vars into utilities (bg-surface-2, etc.) ─── */
+@theme inline {
+  --color-background:           hsl(var(--background));
+  --color-foreground:           hsl(var(--foreground));
+
+  --color-surface-1:            hsl(var(--surface-1));
+  --color-surface-2:            hsl(var(--surface-2));
+  --color-surface-3:            hsl(var(--surface-3));
+
+  --color-card:                 hsl(var(--card));
+  --color-card-foreground:      hsl(var(--card-foreground));
+  --color-popover:              hsl(var(--popover));
+  --color-popover-foreground:   hsl(var(--popover-foreground));
+
+  --color-primary:              hsl(var(--primary));
+  --color-primary-foreground:   hsl(var(--primary-foreground));
+  --color-primary-glow:         hsl(var(--primary-glow));
+
+  --color-secondary:            hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted:                hsl(var(--muted));
+  --color-muted-foreground:     hsl(var(--muted-foreground));
+
+  --color-accent:               hsl(var(--accent));
+  --color-accent-foreground:    hsl(var(--accent-foreground));
+
+  --color-destructive:          hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-success:              hsl(var(--success));
+  --color-warning:              hsl(var(--warning));
+
+  --color-border:               hsl(var(--border));
+  --color-input:                hsl(var(--input));
+  --color-ring:                 hsl(var(--ring));
+
+  --color-sidebar:              hsl(var(--sidebar-bg));
+  --color-titlebar:             hsl(var(--titlebar-bg));
+
+  --color-traffic-red:          hsl(var(--traffic-red));
+  --color-traffic-yellow:       hsl(var(--traffic-yellow));
+  --color-traffic-green:        hsl(var(--traffic-green));
+
+  --shadow-window:   var(--shadow-window);
+  --shadow-elevated: var(--shadow-elevated);
+  --shadow-glow:     var(--shadow-glow);
 }
 
 /* ─── Base reset ─── */
@@ -98,87 +212,70 @@ html, body, #root {
   font-feature-settings: "ss01", "cv11";
   font-size: 13px;
   color: var(--text);
-  /* Deep purple/indigo background matching the Halo-finder screenshot */
-  background: hsl(240 28% 8%);
-  background-image:
-    radial-gradient(ellipse at top left,    hsl(211 100% 60% / 0.12), transparent 55%),
-    radial-gradient(ellipse at bottom right, hsl(280 80% 65% / 0.10), transparent 55%);
+  background: var(--backdrop-base);
+  background-image: var(--backdrop);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-@media (prefers-color-scheme: light) {
-  html, body, #root {
-    background: hsl(220 20% 94%);
-    background-image: none;
-  }
+
+body {
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* ─── Scrollbars ─── */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: hsl(220 12% 22%);
+  background: hsl(var(--surface-3));
   border-radius: 4px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(215 12% 38%);
+  background: hsl(var(--muted-foreground) / 0.6);
   background-clip: padding-box;
   border: 2px solid transparent;
-}
-@media (prefers-color-scheme: light) {
-  ::-webkit-scrollbar-thumb { background: hsl(220 12% 78%); background-clip: padding-box; }
-  ::-webkit-scrollbar-thumb:hover { background: hsl(220 12% 62%); background-clip: padding-box; }
 }
 
 /* ─── Panel resize handle ─── */
 [data-panel-resize-handle-enabled] { cursor: col-resize; }
 
-/* ─── Glassmorphism utilities ─── */
+/* ─── Glass + component utilities ─── */
 @layer components {
   .glass {
-    background: hsl(220 16% 13% / 0.72);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    background: hsl(var(--surface-1) / 0.72);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
   }
   .glass-strong {
-    background: hsl(220 16% 11% / 0.88);
+    background: hsl(var(--surface-1) / 0.92);
     backdrop-filter: saturate(180%) blur(40px);
     -webkit-backdrop-filter: saturate(180%) blur(40px);
-  }
-  @media (prefers-color-scheme: light) {
-    .glass       { background: hsl(0 0% 96% / 0.78); }
-    .glass-strong { background: hsl(0 0% 94% / 0.92); }
   }
 
   /* File list row states */
   .row-hover { transition: background 0.15s ease; }
-  .row-hover:hover { background: hsl(220 14% 17%); }
+  .row-hover:hover { background: hsl(var(--surface-2)); }
   .row-active {
-    background: linear-gradient(90deg, hsl(211 100% 60% / 0.2), hsl(211 100% 60% / 0.08));
-    color: hsl(210 20% 96%);
-  }
-  @media (prefers-color-scheme: light) {
-    .row-hover:hover { background: hsl(220 16% 94%); }
-    .row-active { background: linear-gradient(90deg, hsl(211 100% 50% / 0.12), hsl(211 100% 50% / 0.04)); }
+    background: linear-gradient(90deg, hsl(var(--primary) / 0.18), hsl(var(--primary) / 0.08));
+    color: hsl(var(--foreground));
   }
 
   /* Sidebar gradient active state */
   .sidebar-active {
-    background: linear-gradient(135deg, hsl(211 100% 60%), hsl(232 90% 65%));
-    color: hsl(0 0% 100%);
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(232 90% 65%));
+    color: hsl(var(--primary-foreground));
   }
 
   /* Thin scrollbar for panels */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: hsl(220 12% 22%) transparent;
+    scrollbar-color: hsl(var(--surface-3)) transparent;
   }
   .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(220 12% 22%);
+    background: hsl(var(--surface-3));
     border-radius: 6px;
   }
   .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
@@ -187,7 +284,7 @@ html, body, #root {
   .traffic-light {
     height: 0.75rem;
     width: 0.75rem;
-    border-radius: 50%;
+    border-radius: 9999px;
     transition: opacity 0.15s;
     box-shadow: inset 0 0 0 0.5px hsl(0 0% 0% / 0.25);
   }
@@ -195,20 +292,18 @@ html, body, #root {
 
 /* ─── Context menu ─── */
 .nd-context-menu {
-  background: hsl(220 16% 13% / 0.85);
+  background: hsl(var(--surface-1) / 0.85);
   backdrop-filter: saturate(180%) blur(30px);
   -webkit-backdrop-filter: saturate(180%) blur(30px);
-  border: 1px solid hsl(220 12% 30% / 0.6);
-  color: var(--text);
+  border: 1px solid hsl(var(--border) / 0.7);
+  color: hsl(var(--foreground));
   box-shadow:
-    0 14px 48px hsl(0 0% 0% / 0.55),
-    0 2px 8px   hsl(0 0% 0% / 0.35),
-    inset 0 1px 0 hsl(210 20% 96% / 0.06);
+    0 14px 48px hsl(0 0% 0% / 0.45),
+    0 2px 8px   hsl(0 0% 0% / 0.25),
+    inset 0 1px 0 hsl(var(--foreground) / 0.05);
 }
-@media (prefers-color-scheme: light) {
-  .nd-context-menu {
-    background: hsl(0 0% 100% / 0.85);
-    border: 1px solid hsl(220 12% 85% / 0.8);
-    box-shadow: 0 8px 32px hsl(0 0% 0% / 0.12), 0 2px 8px hsl(0 0% 0% / 0.08);
-  }
+.light .nd-context-menu {
+  box-shadow:
+    0 8px 32px hsl(0 0% 0% / 0.12),
+    0 2px 8px hsl(0 0% 0% / 0.08);
 }

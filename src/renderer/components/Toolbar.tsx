@@ -11,9 +11,11 @@ type Props = {
   onRefresh: () => void
   onNewFolder: () => void
   onNewFile: () => void
+  theme: 'light' | 'dark'
+  onToggleTheme: () => void
 }
 
-export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, onNewFile }: Props) {
+export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, onNewFile, theme, onToggleTheme }: Props) {
   const { activePaneId, panes, navigateTo, navigateBack, navigateForward, navigateUp, showHidden, toggleHidden, viewMode, setViewMode, syncPanes, setSyncPanes } = usePaneStore()
   const pane = panes[activePaneId]
   const [editing, setEditing] = useState(false)
@@ -103,6 +105,9 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
       {/* Right-side controls */}
       <div className="flex items-center gap-0.5 [-webkit-app-region:no-drag]">
         <TBtn onClick={toggleHidden} active={showHidden} title="Show hidden files (⇧⌘.)"><DotIcon /></TBtn>
+        <TBtn onClick={onToggleTheme} title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+          {theme === 'light' ? <MoonIcon /> : <SunIcon />}
+        </TBtn>
         <TBtn onClick={onTogglePreview} active={showPreview} title="Toggle preview (⌘⇧P)"><PreviewIcon /></TBtn>
       </div>
 
@@ -171,4 +176,6 @@ function ColumnsIcon()      { return <svg className="h-[18px] w-[18px]" viewBox=
 function DotIcon()          { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg> }
 function PreviewIcon()      { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" x2="15" y1="3" y2="21"/></svg> }
 function ChevronSmallIcon() { return <svg className="h-3 w-3 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg> }
+function SunIcon()          { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg> }
+function MoonIcon()         { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg> }
 function SyncIcon()         { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg> }

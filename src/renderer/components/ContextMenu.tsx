@@ -71,7 +71,7 @@ export function ContextMenu({ x, y, items, onClose }: Props) {
               'group w-full flex items-center gap-2.5 px-3.5 py-[7px] rounded-md transition-colors text-left',
               it.disabled ? 'opacity-40 cursor-default' :
               it.danger ? 'text-red-400 hover:bg-red-500 hover:text-white' :
-              'hover:bg-[var(--accent)] hover:text-white',
+              'hover:bg-[var(--accent-color)] hover:text-white',
             ].join(' ')}
           >
             <span className="w-[22px] h-[22px] flex-shrink-0 flex items-center justify-center opacity-75 group-hover:opacity-100">

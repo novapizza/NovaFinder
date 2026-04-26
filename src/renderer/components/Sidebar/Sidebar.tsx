@@ -5,7 +5,8 @@ import { useTagStore, TAG_COLORS } from '../../store/tagStore'
 import { useRecentsStore, RECENTS_PATH } from '../../store/recentsStore'
 import { usePinnedStore } from '../../store/pinnedStore'
 import { useRecentFoldersStore } from '../../store/recentFoldersStore'
-import { SidebarIcon, type SidebarIconName } from './SidebarIcon'
+import { SidebarIcon, SIDEBAR_ACCENT, type SidebarIconName } from './SidebarIcon'
+import { DiskUsage } from './DiskUsage'
 import { FileIcon } from '../FileIcon'
 
 type Item = { label: string; path: string; icon: SidebarIconName }
@@ -71,9 +72,10 @@ export function Sidebar() {
 
 
   return (
+    <div className="h-full flex flex-col select-none">
     <div
-      className="h-full overflow-y-auto select-none scrollbar-thin"
-      style={{ padding: '10px 12px 16px 12px' }}
+      className="flex-1 min-h-0 overflow-y-auto scrollbar-thin"
+      style={{ padding: '10px 12px 12px 12px' }}
     >
 
       {/* FAVORITES */}
@@ -86,7 +88,7 @@ export function Sidebar() {
               style={{ padding: '7px 9px' }}
               className={`${ITEM_BASE} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
             >
-              <SidebarIcon name="recents" className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-white' : 'text-primary'}`} />
+              <SidebarIcon name="recents" className={`h-[18px] w-[18px] ${active ? 'text-white' : SIDEBAR_ACCENT.recents}`} />
               <span className="flex-1 truncate">Recents</span>
             </button>
           )
@@ -100,7 +102,7 @@ export function Sidebar() {
               style={{ padding: '7px 9px' }}
               className={`${ITEM_BASE} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
             >
-              <SidebarIcon name={item.icon} className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-white' : 'text-primary'}`} />
+              <SidebarIcon name={item.icon} className={`h-[18px] w-[18px] ${active ? 'text-white' : SIDEBAR_ACCENT[item.icon]}`} />
               <span className="flex-1 truncate">{item.label}</span>
             </button>
           )
@@ -119,7 +121,7 @@ export function Sidebar() {
                   style={{ padding: '7px 9px' }}
                   className={`${ITEM_BASE} flex-1 ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
                 >
-                  <svg className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-white' : 'text-primary'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  <SidebarIcon name="pin" className={`h-[18px] w-[18px] ${active ? 'text-white' : SIDEBAR_ACCENT.pin}`} />
                   <span className="flex-1 truncate">{item.label}</span>
                 </button>
                 <button
@@ -147,7 +149,7 @@ export function Sidebar() {
                 style={{ padding: '7px 9px' }}
                 className={`${ITEM_BASE} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
               >
-                <svg className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-white' : 'text-muted-foreground/70'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+                <SidebarIcon name="recent-folder" className={`h-[18px] w-[18px] ${active ? 'text-white' : SIDEBAR_ACCENT['recent-folder']}`} />
                 <span className="flex-1 truncate">{item.name}</span>
               </button>
             )
@@ -166,7 +168,7 @@ export function Sidebar() {
               style={{ padding: '7px 9px' }}
               className={`${ITEM_BASE} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
             >
-              <SidebarIcon name={item.icon} className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-white' : 'text-primary'}`} />
+              <SidebarIcon name={item.icon} className={`h-[18px] w-[18px] ${active ? 'text-white' : SIDEBAR_ACCENT[item.icon]}`} />
               <span className="flex-1 truncate">{item.label}</span>
             </button>
           )
@@ -203,6 +205,12 @@ export function Sidebar() {
           </button>
         </Group>
       )}
+    </div>
+
+      {/* Disk usage pinned to bottom */}
+      <div className="shrink-0 border-t border-border/40" style={{ padding: '10px 12px' }}>
+        <DiskUsage label="Macintosh HD" path={paths.root} />
+      </div>
     </div>
   )
 }

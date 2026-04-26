@@ -8,6 +8,7 @@ import { PreviewPanel } from './components/PreviewPanel/PreviewPanel'
 import { StatusBar } from './components/StatusBar'
 import { GetInfoModal } from './components/GetInfoModal'
 import { useKeyboard } from './hooks/useKeyboard'
+import { useTheme } from './hooks/useTheme'
 import { usePaneStore } from './store/paneStore'
 import { useFileOps } from './hooks/useFileOps'
 import { PromptModal } from './components/PromptModal'
@@ -23,6 +24,7 @@ export default function App() {
   const { activePaneId, panes, showHidden, setSelection } = usePaneStore()
   const { } = useFileOps()
   const loadTags = useTagStore((s) => s.load)
+  const { theme, toggle: toggleTheme } = useTheme()
   useEffect(() => { loadTags() }, [loadTags])
 
   function handleRefresh() { reloadFn.current?.() }
@@ -73,7 +75,10 @@ export default function App() {
               onRefresh={handleRefresh}
               onNewFolder={() => newFolderFn.current?.()}
               onNewFile={() => newFileFn.current?.()}
+              theme={theme}
+              onToggleTheme={toggleTheme}
             />
+            <div className="h-3 shrink-0" />
             <PanelGroup direction="horizontal" className="flex-1 overflow-hidden min-h-0">
               <Panel defaultSize={60} minSize={25} className="bg-background/40">
                 <FileList
