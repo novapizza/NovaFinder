@@ -13,7 +13,7 @@ type Options = {
 }
 
 export function useKeyboard(options: Options = {}) {
-  const { activePaneId, panes, navigateBack, navigateForward, navigateUp, setActivePaneId, toggleHidden } = usePaneStore()
+  const { activePaneId, panes, navigateBack, navigateForward, navigateUp, toggleHidden, setViewMode } = usePaneStore()
   const { cut, copy, paste, deleteFiles, duplicate, copyPath } = useFileOps(options.onRefresh)
   const focusSearch = useSearchStore((s) => s.focusSearch)
 
@@ -56,8 +56,10 @@ export function useKeyboard(options: Options = {}) {
       if (meta && shift && (e.key === 'n' || e.key === 'N')) { e.preventDefault(); options.onNewFolder?.(); return }
       if (meta && e.key === 'f') { e.preventDefault(); focusSearch(); return }
 
-      if (meta && e.key === '1') { e.preventDefault(); setActivePaneId('left'); return }
-      if (meta && e.key === '2') { e.preventDefault(); setActivePaneId('right'); return }
+      if (meta && e.key === '1') { e.preventDefault(); setViewMode('icon'); return }
+      if (meta && e.key === '2') { e.preventDefault(); setViewMode('list'); return }
+      if (meta && e.key === '3') { e.preventDefault(); setViewMode('column'); return }
+      if (meta && e.key === '4') { e.preventDefault(); setViewMode('gallery'); return }
 
       if (e.key === ' ' && sel.length === 1) { e.preventDefault(); options.onQuickLook?.(sel[0]); return }
       if (meta && e.key === 't') { e.preventDefault(); options.onOpenInTerminal?.(pane.path); return }

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { usePaneStore, type ViewMode } from '../store/paneStore'
 import { RECENTS_PATH } from '../store/recentsStore'
+import { parseSmartFolderId, useSmartFoldersStore } from '../store/smartFoldersStore'
 import { SearchBar } from './SearchBar'
 import { SortMenu } from './SortMenu'
 import { Tooltip } from './Tooltip'
@@ -24,7 +25,13 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
   const canBack = pane.historyIndex > 0
   const canForward = pane.historyIndex < pane.history.length - 1
   const isRecentsMode = pane.path === RECENTS_PATH
-  const canUp = pane.path !== '/' && !isRecentsMode
+  const smartFolderId = parseSmartFolderId(pane.path)
+  const smartFolder = useSmartFoldersStore((s) => smartFolderId ? s.folders.find((f) => f.id === smartFolderId) : undefined)
+  const isVirtualMode = isRecentsMode || !!smartFolder
+  const [trashPath, setTrashPath] = useState<string>('')
+  useEffect(() => { window.fs.trashPath().then(setTrashPath) }, [])
+  const isTrash = !!trashPath && pane.path === trashPath
+  const canUp = pane.path !== '/' && !isVirtualMode
   const segments = pane.path === '/' ? [''] : pane.path.split('/').filter(Boolean)
 
   function startEdit() { setPathInput(pane.path); setEditing(true) }
@@ -54,6 +61,7 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
         <ViewBtn mode="icon" current={viewMode} onSelect={setViewMode} title="As Icons (⌘1)"><GridIcon /></ViewBtn>
         <ViewBtn mode="list" current={viewMode} onSelect={setViewMode} title="As List (⌘2)"><ListIcon /></ViewBtn>
         <ViewBtn mode="column" current={viewMode} onSelect={setViewMode} title="As Columns (⌘3)"><ColumnsIcon /></ViewBtn>
+        <ViewBtn mode="gallery" current={viewMode} onSelect={setViewMode} title="As Gallery (⌘4)"><GalleryIcon /></ViewBtn>
       </div>
 
       <SortMenu />
@@ -63,6 +71,12 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
         {isRecentsMode ? (
           <div className="w-full flex items-center px-3 py-1.5 rounded-lg min-h-[34px] border border-border/40 bg-surface-2/60">
             <span className="text-foreground font-medium text-[13px]">Recents</span>
+          </div>
+        ) : smartFolder ? (
+          <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg min-h-[34px] border border-border/40 bg-surface-2/60">
+            <svg className="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <span className="text-foreground font-medium text-[13px] truncate">{smartFolder.name}</span>
+            <span className="text-muted-foreground text-[11px] truncate">— {smartFolder.mode}: "{smartFolder.query}"</span>
           </div>
         ) : editing ? (
           <input
@@ -104,6 +118,16 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
 
       {/* Right-side controls */}
       <div className="flex items-center gap-0.5 [-webkit-app-region:no-drag]">
+        {isTrash && (
+          <button
+            onClick={async () => {
+              if (!confirm('Empty the Trash? This permanently deletes all items.')) return
+              try { await window.fs.emptyTrash(); onRefresh() } catch (e) { alert(`Empty Trash failed: ${e}`) }
+            }}
+            className="px-2.5 h-8 rounded-md bg-destructive/15 text-destructive hover:bg-destructive/25 text-[12px] font-medium border border-destructive/30 mr-1"
+            title="Empty Trash"
+          >Empty Trash</button>
+        )}
         <TBtn onClick={toggleHidden} active={showHidden} title="Show hidden files (⇧⌘.)"><DotIcon /></TBtn>
         <TBtn onClick={onToggleTheme} title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
           {theme === 'light' ? <MoonIcon /> : <SunIcon />}
@@ -173,6 +197,7 @@ function FilePlusIcon()     { return <svg className="h-[18px] w-[18px]" viewBox=
 function GridIcon()         { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> }
 function ListIcon()         { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg> }
 function ColumnsIcon()      { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" x2="9" y1="3" y2="21"/><line x1="15" x2="15" y1="3" y2="21"/></svg> }
+function GalleryIcon()      { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="12" height="12" rx="2"/><rect x="2" y="18" width="4" height="3" rx="0.5"/><rect x="9" y="18" width="6" height="3" rx="0.5"/><rect x="18" y="18" width="4" height="3" rx="0.5"/></svg> }
 function DotIcon()          { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg> }
 function PreviewIcon()      { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" x2="15" y1="3" y2="21"/></svg> }
 function ChevronSmallIcon() { return <svg className="h-3 w-3 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg> }

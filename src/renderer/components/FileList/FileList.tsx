@@ -4,6 +4,9 @@ import { useDirectory } from './useDirectory'
 import { FileRow } from './FileRow'
 import { FileGrid } from './FileGrid'
 import { ColumnView } from './ColumnView'
+import { GalleryView } from './GalleryView'
+import { MoveToModal } from '../MoveToModal'
+import { parseSmartFolderId, useSmartFoldersStore } from '../../store/smartFoldersStore'
 import { useFileOps } from '../../hooks/useFileOps'
 import { sortEntries } from '../../lib/sort'
 import { ContextMenu, type MenuItem } from '../ContextMenu'
@@ -34,11 +37,30 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   const addRecent = useRecentsStore((s) => s.add)
   const recentEntries = useRecentsStore((s) => s.recents)
   const isRecentsMode = pane.path === RECENTS_PATH
-  const { entries: dirEntries, loading, error, reload } = useDirectory(isRecentsMode ? '' : pane.path, showHidden)
+  const smartId = parseSmartFolderId(pane.path)
+  const smartFolder = useSmartFoldersStore((s) => smartId ? s.folders.find((f) => f.id === smartId) : undefined)
+  const isSmartMode = !!smartFolder
+  const isVirtualMode = isRecentsMode || isSmartMode
+  const { entries: dirEntries, loading, error, reload } = useDirectory(isVirtualMode ? '' : pane.path, showHidden)
+  const [smartResults, setSmartResults] = useState<typeof dirEntries>([])
+  const [smartLoading, setSmartLoading] = useState(false)
+  useEffect(() => {
+    if (!smartFolder) { setSmartResults([]); return }
+    setSmartLoading(true)
+    let cancelled = false
+    window.fs.searchRecursive(smartFolder.scope, smartFolder.query, smartFolder.mode)
+      .then((r) => { if (!cancelled) setSmartResults(r as typeof dirEntries) })
+      .catch(() => { if (!cancelled) setSmartResults([]) })
+      .finally(() => { if (!cancelled) setSmartLoading(false) })
+    return () => { cancelled = true }
+  }, [smartFolder?.id, smartFolder?.scope, smartFolder?.mode, smartFolder?.query])
   const entries = isRecentsMode
     ? recentEntries.map((r) => ({ name: r.name, path: r.path, isDirectory: false, size: 0, modified: r.openedAt, ext: r.ext }))
+    : isSmartMode
+    ? smartResults
     : dirEntries
-  const { rename, deleteFiles, paste, cut, copy, duplicate, copyPath, newFolder, newFile } = useFileOps(reload)
+  const { rename, deleteFiles, paste, cut, copy, move, duplicate, copyPath, newFolder, newFile } = useFileOps(reload)
+  const [moveTarget, setMoveTarget] = useState<string[] | null>(null)
   const clipboard = useClipboardStore()
   const [menu, setMenu] = useState<{ x: number; y: number; path: string } | null>(null)
   const [renamingPath, setRenamingPath] = useState<string | null>(null)
@@ -47,13 +69,13 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   const scrollRef = useRef<HTMLDivElement>(null)
   const addRecentFolder = useRecentFoldersStore((s) => s.add)
   const { add: pinFolder } = usePinnedStore()
-  const gitStatus = useGitStatus(isRecentsMode ? '' : pane.path)
+  const gitStatus = useGitStatus(isVirtualMode ? '' : pane.path)
 
   const { query: searchQuery, mode: searchMode, results: searchResults, scope: searchScope, searching } = useSearchStore()
   const toggleTag = useTagStore((s) => s.toggle)
   const getTags = useTagStore((s) => s.get)
   const tagMap = useTagStore((s) => s.map)
-  const isSearching = !!(searchQuery && searchMode && searchScope === pane.path)
+  const isSearching = !!(searchQuery && searchMode && searchScope === pane.path) && !isVirtualMode
 
   const sorted = useMemo(() => {
     const list = isSearching ? searchResults : entries
@@ -79,7 +101,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   }, [])
 
   useEffect(() => {
-    if (!isRecentsMode && pane.path) addRecentFolder(pane.path)
+    if (!isVirtualMode && pane.path) addRecentFolder(pane.path)
   }, [pane.path])
 
   useEffect(() => {
@@ -271,6 +293,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
             },
           },
           ...(targetIsDir ? [{ label: 'Open in Terminal', icon: 'open' as const, action: () => window.fs.openInTerminal(menuTargets[0]) }] : []),
+          { label: 'Move to…', icon: 'cut', action: () => setMoveTarget(menuTargets) },
           { label: 'Move to Trash', icon: 'trash', action: () => deleteFiles(menuTargets), danger: true },
           { separator: true },
           { label: `Compress ${countLabel}`, icon: 'duplicate', action: () => window.fs.zip(menuTargets).then(reload).catch(() => {}) },
@@ -298,7 +321,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
           },
         ]
 
-  if (viewMode === 'column') {
+  if (viewMode === 'column' && !isVirtualMode) {
     return (
       <ColumnView
         paneId={paneId}
@@ -323,7 +346,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
         className="flex-1 overflow-y-auto scrollbar-thin"
         onClick={(e) => { if (e.target === e.currentTarget) clearSelection() }}
       >
-        {loading && !isSearching && <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">Loading…</div>}
+        {(loading || smartLoading) && !isSearching && <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">Loading…</div>}
         {isSearching && searching && <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">Searching…</div>}
         {error && !isSearching && <PermissionError error={error} path={pane.path} onRetry={() => reload()} />}
         {!loading && !error && !searching && sorted.length === 0 && !pendingNew && (
@@ -358,7 +381,17 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
           </>
         )}
 
-        {viewMode === 'icon' && !loading && !error && (
+        {viewMode === 'gallery' && !loading && !error && (
+          <GalleryView
+            entries={sorted}
+            selection={pane.selection}
+            onSelect={handleSelect}
+            onOpen={handleOpen}
+            onContextMenu={handleContextMenu}
+          />
+        )}
+
+        {(viewMode === 'icon' || (viewMode === 'column' && isVirtualMode)) && !loading && !error && (
           <FileGrid
             entries={sorted}
             selection={pane.selection}
@@ -381,6 +414,18 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
       )}
 
       {infoPath && <GetInfoModal filePath={infoPath} onClose={() => setInfoPath(null)} />}
+
+      {moveTarget && (
+        <MoveToModal
+          count={moveTarget.length}
+          onCancel={() => setMoveTarget(null)}
+          onMove={async (dest) => {
+            const targets = moveTarget
+            setMoveTarget(null)
+            await move(targets, dest)
+          }}
+        />
+      )}
     </div>
   )
 }

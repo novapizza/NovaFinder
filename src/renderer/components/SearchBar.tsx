@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchStore } from '../store/searchStore'
 import { usePaneStore } from '../store/paneStore'
+import { smartFolderPath, useSmartFoldersStore } from '../store/smartFoldersStore'
 
 const SIZE_KEYWORDS = [
   { key: 'tiny',   label: 'Tiny',   desc: '0 – 16 KB' },
@@ -18,7 +19,8 @@ function parseSizeKeyword(q: string): string | null {
 
 export function SearchBar() {
   const { query, mode, setQuery, setMode, clear, setResults, setSearching, focusTrigger } = useSearchStore()
-  const { activePaneId, panes } = usePaneStore()
+  const { activePaneId, panes, navigateTo } = usePaneStore()
+  const addSmart = useSmartFoldersStore((s) => s.add)
   const [focused, setFocused] = useState(false)
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -110,6 +112,20 @@ export function SearchBar() {
     inputRef.current?.focus()
   }
 
+  function saveSmartFolder() {
+    const scope = panes[activePaneId].path
+    const effectiveMode = (mode === 'size' ? 'size' : (mode ?? 'name')) as 'name' | 'content' | 'kind' | 'size'
+    const queryValue = effectiveMode === 'size' ? (parseSizeKeyword(query) ?? '') : query.trim()
+    if (!queryValue) return
+    const defaultName = `${effectiveMode}: ${queryValue}`
+    const name = window.prompt('Smart Folder name', defaultName)
+    if (!name) return
+    const folder = addSmart({ name, scope, mode: effectiveMode, query: queryValue })
+    clear()
+    setOpen(false)
+    navigateTo(activePaneId, smartFolderPath(folder.id))
+  }
+
   const q = query.trim()
   const isSizeMode = mode === 'size' || q.startsWith('size:')
   const sizeTyped = parseSizeKeyword(q) ?? ''
@@ -195,7 +211,19 @@ export function SearchBar() {
                   Filter by file size… <span className="ml-auto text-[11px] opacity-50 pl-3">size:</span>
                 </Suggestion>
               </SuggestionGroup>
+              <SuggestionGroup title="Smart Folder">
+                <Suggestion onClick={saveSmartFolder}>
+                  💾 Save as Smart Folder…
+                </Suggestion>
+              </SuggestionGroup>
             </>
+          )}
+          {isSizeMode && parseSizeKeyword(q) && SIZE_KEYWORDS.find((s) => s.key === parseSizeKeyword(q)) && (
+            <SuggestionGroup title="Smart Folder">
+              <Suggestion onClick={saveSmartFolder}>
+                💾 Save as Smart Folder…
+              </Suggestion>
+            </SuggestionGroup>
           )}
         </div>
       )}

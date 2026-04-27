@@ -5,6 +5,7 @@ import { useTagStore, TAG_COLORS } from '../../store/tagStore'
 import { useRecentsStore, RECENTS_PATH } from '../../store/recentsStore'
 import { usePinnedStore } from '../../store/pinnedStore'
 import { useRecentFoldersStore } from '../../store/recentFoldersStore'
+import { smartFolderPath, useSmartFoldersStore } from '../../store/smartFoldersStore'
 import { SidebarIcon, SIDEBAR_ACCENT, type SidebarIconName } from './SidebarIcon'
 import { DiskUsage } from './DiskUsage'
 import { FileIcon } from '../FileIcon'
@@ -26,6 +27,10 @@ export function Sidebar() {
   const hasRecents = useRecentsStore((s) => s.recents.length > 0)
   const { pinned, remove: removePin } = usePinnedStore()
   const recentFolders = useRecentFoldersStore((s) => s.folders)
+  const smartFolders = useSmartFoldersStore((s) => s.folders)
+  const removeSmart = useSmartFoldersStore((s) => s.remove)
+  const [trashPath, setTrashPath] = useState<string>('')
+  useEffect(() => { window.fs.trashPath().then(setTrashPath) }, [])
 
   useEffect(() => { window.fs.specialPaths().then(setPaths) }, [])
   useEffect(() => {
@@ -55,6 +60,7 @@ export function Sidebar() {
     { label: 'Macintosh HD', path: paths.root,   icon: 'drive' },
     ...volumes.map((v) => ({ label: v.split('/').pop() || v, path: v, icon: 'drive' as SidebarIconName })),
     { label: 'iCloud Drive', path: paths.icloud, icon: 'icloud' },
+    ...(trashPath ? [{ label: 'Trash', path: trashPath, icon: 'recents' as SidebarIconName }] : []),
   ]
 
   const tagCounts: Record<string, number> = {}
@@ -128,6 +134,36 @@ export function Sidebar() {
                   onClick={() => removePin(item.path)}
                   className="shrink-0 opacity-0 group-hover/pin:opacity-100 transition-opacity p-1 text-muted-foreground/60 hover:text-foreground rounded"
                   title="Remove pin"
+                >
+                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+            )
+          })}
+        </Group>
+      )}
+
+      {/* SMART FOLDERS */}
+      {smartFolders.length > 0 && (
+        <Group title="Smart Folders" collapsed={!!collapsed.SmartFolders} onToggle={() => toggle('SmartFolders')}>
+          {smartFolders.map((sf) => {
+            const sfPath = smartFolderPath(sf.id)
+            const active = activeNav === sfPath
+            return (
+              <div key={sf.id} className="group/sf flex items-center">
+                <button
+                  onClick={() => navigate(sfPath)}
+                  style={{ padding: '7px 9px' }}
+                  className={`${ITEM_BASE} flex-1 ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
+                  title={`${sf.mode}: "${sf.query}" in ${sf.scope}`}
+                >
+                  <svg className={`h-[18px] w-[18px] ${active ? 'text-white' : 'text-primary'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                  <span className="flex-1 truncate">{sf.name}</span>
+                </button>
+                <button
+                  onClick={() => removeSmart(sf.id)}
+                  className="shrink-0 opacity-0 group-hover/sf:opacity-100 transition-opacity p-1 text-muted-foreground/60 hover:text-foreground rounded"
+                  title="Remove smart folder"
                 >
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>

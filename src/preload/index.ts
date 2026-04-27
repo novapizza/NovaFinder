@@ -25,6 +25,9 @@ contextBridge.exposeInMainWorld('fs', {
   rename: (src: string, dest: string) => ipcRenderer.invoke('fs:rename', src, dest),
   copy: (src: string, dest: string) => ipcRenderer.invoke('fs:copy', src, dest),
   delete: (p: string) => ipcRenderer.invoke('fs:delete', p),
+  move: (src: string, dest: string) => ipcRenderer.invoke('fs:move', src, dest),
+  trashPath: () => ipcRenderer.invoke('fs:trashPath'),
+  emptyTrash: () => ipcRenderer.invoke('fs:emptyTrash'),
   mkdir: (p: string) => ipcRenderer.invoke('fs:mkdir', p),
   open: (p: string) => ipcRenderer.invoke('fs:open', p),
   homedir: () => ipcRenderer.invoke('fs:homedir'),
@@ -67,6 +70,9 @@ declare global {
       rename(src: string, dest: string): Promise<void>
       copy(src: string, dest: string): Promise<void>
       delete(p: string): Promise<void>
+      move(src: string, dest: string): Promise<void>
+      trashPath(): Promise<string>
+      emptyTrash(): Promise<void>
       mkdir(p: string): Promise<void>
       open(p: string): Promise<void>
       homedir(): Promise<string>

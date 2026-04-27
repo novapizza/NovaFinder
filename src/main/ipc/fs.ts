@@ -95,6 +95,32 @@ export function registerFsHandlers() {
     await shell.trashItem(filePath)
   })
 
+  ipcMain.handle('fs:move', async (_e, src: string, dest: string) => {
+    try {
+      await fs.rename(src, dest)
+    } catch (err: any) {
+      if (err?.code === 'EXDEV') {
+        const stat = await fs.stat(src)
+        if (stat.isDirectory()) await fs.cp(src, dest, { recursive: true })
+        else await fs.copyFile(src, dest)
+        await fs.rm(src, { recursive: true, force: true })
+      } else {
+        throw err
+      }
+    }
+  })
+
+  ipcMain.handle('fs:trashPath', () => path.join(os.homedir(), '.Trash'))
+
+  ipcMain.handle('fs:emptyTrash', async () => {
+    await new Promise<void>((resolve, reject) => {
+      execFile('osascript', ['-e', 'tell application "Finder" to empty trash'], (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+  })
+
   ipcMain.handle('fs:mkdir', async (_e, dirPath: string) => {
     await fs.mkdir(dirPath, { recursive: true })
   })
