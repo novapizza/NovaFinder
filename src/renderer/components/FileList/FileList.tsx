@@ -5,18 +5,14 @@ import { FileRow } from './FileRow'
 import { FileGrid } from './FileGrid'
 import { ColumnView } from './ColumnView'
 import { GalleryView } from './GalleryView'
-import { MoveToModal } from '../MoveToModal'
 import { parseSmartFolderId, useSmartFoldersStore } from '../../store/smartFoldersStore'
 import { useFileOps } from '../../hooks/useFileOps'
 import { sortEntries } from '../../lib/sort'
-import { ContextMenu, type MenuItem } from '../ContextMenu'
-import { GetInfoModal } from '../GetInfoModal'
-import { useClipboardStore } from '../../store/clipboardStore'
+import { useFileMenu } from '../../hooks/useFileMenu'
 import { useSearchStore } from '../../store/searchStore'
 import { useTagStore, type TagColor, EMPTY_TAGS } from '../../store/tagStore'
 import { useRecentsStore, RECENTS_PATH } from '../../store/recentsStore'
 import { useRecentFoldersStore } from '../../store/recentFoldersStore'
-import { usePinnedStore } from '../../store/pinnedStore'
 import { useGitStatus } from '../../hooks/useGitStatus'
 import { FileIcon } from '../FileIcon'
 
@@ -59,21 +55,15 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
     : isSmartMode
     ? smartResults
     : dirEntries
-  const { rename, deleteFiles, paste, cut, copy, move, duplicate, copyPath, newFolder, newFile } = useFileOps(reload)
-  const [moveTarget, setMoveTarget] = useState<string[] | null>(null)
-  const clipboard = useClipboardStore()
-  const [menu, setMenu] = useState<{ x: number; y: number; path: string } | null>(null)
+  const { rename, paste, newFolder, newFile } = useFileOps(reload)
   const [renamingPath, setRenamingPath] = useState<string | null>(null)
-  const [infoPath, setInfoPath] = useState<string | null>(null)
   const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const paneRef = useRef<HTMLDivElement>(null)
   const addRecentFolder = useRecentFoldersStore((s) => s.add)
-  const { add: pinFolder } = usePinnedStore()
   const gitStatus = useGitStatus(isVirtualMode ? '' : pane.path)
 
   const { query: searchQuery, mode: searchMode, results: searchResults, scope: searchScope, searching } = useSearchStore()
-  const toggleTag = useTagStore((s) => s.toggle)
-  const getTags = useTagStore((s) => s.get)
   const tagMap = useTagStore((s) => s.map)
   const isSearching = !!(searchQuery && searchMode && searchScope === pane.path) && !isVirtualMode
 
@@ -235,91 +225,23 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
 
   function clearSelection() { setSelection(paneId, []); onClearPreview?.() }
 
+  const fileMenu = useFileMenu({
+    paneId,
+    paneRef,
+    reload,
+    onRequestRename: (p) => setRenamingPath(p),
+    onRequestNew: (type) => setPendingNew({ type }),
+  })
+
   function handleContextMenu(e: React.MouseEvent, path: string) {
-    if (!pane.selection.includes(path)) setSelection(paneId, [path], path)
-    setMenu({ x: e.clientX, y: e.clientY, path })
+    const entry = sorted.find((x) => x.path === path)
+    if (!entry) return
+    fileMenu.openMenu(e, entry)
   }
 
   function handleBgContextMenu(e: React.MouseEvent) {
-    e.preventDefault()
-    clearSelection()
-    setMenu({ x: e.clientX, y: e.clientY, path: pane.path })
+    fileMenu.openBgMenu(e, pane.path)
   }
-
-  const menuTargets = pane.selection.length > 0 ? pane.selection : (menu ? [menu.path] : [])
-  const hasClipboard = clipboard.files.length > 0 && clipboard.operation !== null
-
-  function firstName(): string {
-    if (!menuTargets.length) return ''
-    return menuTargets[0].split('/').pop() || ''
-  }
-  const countLabel = menuTargets.length > 1 ? `${menuTargets.length} items` : `"${firstName()}"`
-
-  const targetEntry = sorted.find((e) => e.path === menuTargets[0])
-  const targetIsDir = targetEntry?.isDirectory ?? false
-  const targetIsZip = targetEntry?.ext === 'zip'
-
-  const menuItems: MenuItem[] = !menu ? [] :
-    menu.path === pane.path && pane.selection.length === 0
-      ? [
-          { label: 'New Folder', icon: 'new-folder', action: () => { setMenu(null); setPendingNew({ type: 'folder' }) } },
-          { label: 'New File',   icon: 'new-file',   action: () => { setMenu(null); setPendingNew({ type: 'file' }) } },
-          { separator: true },
-          { label: 'Paste', icon: 'paste', action: () => paste(pane.path), disabled: !hasClipboard },
-          { separator: true },
-          { label: 'Open in Terminal', icon: 'open', action: () => window.fs.openInTerminal(pane.path) },
-          { separator: true },
-          { label: 'Get Info', icon: 'info', action: () => setInfoPath(pane.path) },
-          { label: 'Refresh',  icon: 'refresh', action: () => reload() },
-        ]
-      : [
-          {
-            label: 'Open',
-            icon: 'open',
-            action: () => {
-              const f = sorted.find((e) => e.path === menuTargets[0])
-              if (f) handleOpen(f)
-            },
-          },
-          { label: 'Open with Default App', icon: 'open-default', action: () => window.fs.open(menuTargets[0]) },
-          {
-            label: 'Reveal in NovaFinder',
-            icon: 'reveal',
-            action: () => {
-              const target = menuTargets[0]
-              const parent = target.replace(/\/[^/]+\/?$/, '') || '/'
-              if (parent !== pane.path) navigateTo(paneId, parent)
-              setSelection(paneId, [target], target)
-            },
-          },
-          ...(targetIsDir ? [{ label: 'Open in Terminal', icon: 'open' as const, action: () => window.fs.openInTerminal(menuTargets[0]) }] : []),
-          { label: 'Move to…', icon: 'cut', action: () => setMoveTarget(menuTargets) },
-          { label: 'Move to Trash', icon: 'trash', action: () => deleteFiles(menuTargets), danger: true },
-          { separator: true },
-          { label: `Compress ${countLabel}`, icon: 'duplicate', action: () => window.fs.zip(menuTargets).then(reload).catch(() => {}) },
-          ...(targetIsZip && menuTargets.length === 1 ? [{ label: 'Extract Here', icon: 'open' as const, action: () => window.fs.unzip(menuTargets[0]).then(reload).catch(() => {}) }] : []),
-          { separator: true },
-          ...(targetIsDir && menuTargets.length === 1 ? [{ label: 'Pin to Sidebar', icon: 'copy-path' as const, action: () => pinFolder(menuTargets[0], menuTargets[0].split('/').pop() ?? menuTargets[0]) }] : []),
-          { label: 'Get Info', icon: 'info', action: () => setInfoPath(menuTargets[0]) },
-          { separator: true },
-          { label: `Cut ${countLabel}`, icon: 'cut', action: () => cut(menuTargets) },
-          { label: `Copy ${countLabel}`, icon: 'copy', action: () => copy(menuTargets) },
-          { label: 'Paste', icon: 'paste', action: () => paste(pane.path), disabled: !hasClipboard },
-          { separator: true },
-          { label: 'Duplicate', icon: 'duplicate', action: () => duplicate(menuTargets) },
-          { label: 'Copy Name', icon: 'copy-path', action: () => window.fs.writeClipboardText(menuTargets.map((p) => p.split('/').pop() ?? p).join('\n')) },
-          { label: 'Copy Path', icon: 'copy-path', action: () => copyPath(menuTargets) },
-          { separator: true },
-          { label: 'Rename', icon: 'rename', action: () => setRenamingPath(menuTargets[0]), disabled: menuTargets.length !== 1 },
-          { separator: true },
-          {
-            tagsRow: true,
-            selectedColors: menuTargets.length === 1 ? getTags(menuTargets[0]) : [],
-            onToggle: (color) => {
-              for (const p of menuTargets) toggleTag(p, color as TagColor)
-            },
-          },
-        ]
 
   if (viewMode === 'column' && !isVirtualMode) {
     return (
@@ -333,6 +255,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
 
   return (
     <div
+      ref={paneRef}
       className="flex flex-col h-full overflow-hidden bg-background/40"
       onClick={() => setActivePaneId(paneId)}
       onContextMenu={handleBgContextMenu}
@@ -409,23 +332,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
         )}
       </div>
 
-      {menu && (
-        <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />
-      )}
-
-      {infoPath && <GetInfoModal filePath={infoPath} onClose={() => setInfoPath(null)} />}
-
-      {moveTarget && (
-        <MoveToModal
-          count={moveTarget.length}
-          onCancel={() => setMoveTarget(null)}
-          onMove={async (dest) => {
-            const targets = moveTarget
-            setMoveTarget(null)
-            await move(targets, dest)
-          }}
-        />
-      )}
+      {fileMenu.element}
     </div>
   )
 }

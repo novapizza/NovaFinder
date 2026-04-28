@@ -74,24 +74,7 @@ export function useFileOps(onReload?: () => void) {
     await window.fs.writeClipboardText(paths.join('\n'))
   }
 
-  async function move(paths: string[], destDir: string) {
-    if (!destDir || !paths.length) return
-    for (const src of paths) {
-      const srcDir = path.dirname(src)
-      if (srcDir === destDir) continue
-      const name = path.basename(src)
-      const targetName = await uniqueName(destDir, name)
-      try {
-        await window.fs.move(src, path.join(destDir, targetName))
-      } catch (e) {
-        alert(`Move failed for ${name}: ${e}`)
-      }
-    }
-    setSelection(activePaneId, [])
-    onReload?.()
-  }
-
-  async function deleteFiles(paths: string[]) {
+async function deleteFiles(paths: string[]) {
     for (const p of paths) {
       try { await window.fs.delete(p) } catch (e) { alert(`Delete failed: ${e}`) }
     }
@@ -117,5 +100,5 @@ export function useFileOps(onReload?: () => void) {
     onReload?.()
   }
 
-  return { cut, copy, paste, move, duplicate, copyPath, deleteFiles, newFolder, newFile, rename }
+  return { cut, copy, paste, duplicate, copyPath, deleteFiles, newFolder, newFile, rename }
 }

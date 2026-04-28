@@ -16,9 +16,10 @@ type Props = {
   y: number
   items: MenuItem[]
   onClose: () => void
+  boundsRef?: React.RefObject<HTMLElement | null>
 }
 
-export function ContextMenu({ x, y, items, onClose }: Props) {
+export function ContextMenu({ x, y, items, onClose, boundsRef }: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -37,26 +38,38 @@ export function ContextMenu({ x, y, items, onClose }: Props) {
   const MENU_W = 260
   const itemCount = items.filter((i) => !('separator' in i && i.separator)).length
   const sepCount = items.filter((i) => 'separator' in i && i.separator).length
-  const approxH = itemCount * 30 + sepCount * 9 + 12
+  const approxH = itemCount * 24 + sepCount * 7 + 12
+
+  const bounds = boundsRef?.current?.getBoundingClientRect()
+  const minX = bounds ? bounds.left + 4 : 4
+  const maxX = bounds ? bounds.right - 4 : window.innerWidth - 4
+  const minY = bounds ? bounds.top + 4 : 4
+  const maxY = bounds ? bounds.bottom - 4 : window.innerHeight - 4
+
+  const left = Math.max(minX, Math.min(x, maxX - MENU_W))
+  const top = Math.max(minY, Math.min(y, maxY - approxH))
+  const maxHeight = maxY - top
 
   const style: React.CSSProperties = {
     position: 'fixed',
-    left: Math.min(x, window.innerWidth - MENU_W - 8),
-    top: Math.min(y, window.innerHeight - approxH - 8),
+    left,
+    top,
     zIndex: 9999,
     minWidth: MENU_W,
     padding: '6px 4px',
+    maxHeight,
+    overflowY: 'auto',
   }
 
   return (
     <div
       ref={ref}
       style={style}
-      className="nd-context-menu rounded-[10px] overflow-hidden text-[13px] shadow-[0_14px_48px_rgba(0,0,0,0.35),0_2px_8px_rgba(0,0,0,0.2)]"
+      className="nd-context-menu rounded-[10px] text-[13px] shadow-[0_14px_48px_rgba(0,0,0,0.35),0_2px_8px_rgba(0,0,0,0.2)]"
     >
       {items.map((item, i) => {
         if ('separator' in item && item.separator) {
-          return <div key={i} className="my-[5px] mx-2 border-t border-white/10 dark:border-white/10" />
+          return <div key={i} className="my-[3px] mx-2 border-t border-white/10 dark:border-white/10" />
         }
         if ('tagsRow' in item && item.tagsRow) {
           return <TagsRow key={i} selectedColors={item.selectedColors} onToggle={(c) => { item.onToggle(c); if (item.closeOnToggle) onClose() }} />
@@ -68,7 +81,7 @@ export function ContextMenu({ x, y, items, onClose }: Props) {
             disabled={it.disabled}
             onClick={() => { it.action(); onClose() }}
             className={[
-              'group w-full flex items-center gap-2.5 px-3.5 py-[7px] rounded-md transition-colors text-left',
+              'group w-full flex items-center gap-2.5 px-3.5 py-[3px] rounded-md transition-colors text-left',
               it.disabled ? 'opacity-40 cursor-default' :
               it.danger ? 'text-red-400 hover:bg-red-500 hover:text-white' :
               'hover:bg-[var(--accent-color)] hover:text-white',

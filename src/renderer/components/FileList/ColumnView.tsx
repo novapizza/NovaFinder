@@ -4,6 +4,7 @@ import { useDirectory, type FileEntry } from './useDirectory'
 import { FileIcon } from '../FileIcon'
 import { useRecentsStore } from '../../store/recentsStore'
 import { sortEntries } from '../../lib/sort'
+import { useFileMenu } from '../../hooks/useFileMenu'
 
 type Props = {
   paneId: 'left' | 'right'
@@ -21,6 +22,11 @@ export function ColumnView({ paneId, onPreview, onClearPreview }: Props) {
 
   const selfNavigating = useRef(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const paneRef = useRef<HTMLDivElement>(null)
+
+  const [reloadKey, setReloadKey] = useState(0)
+  const reload = () => setReloadKey((n) => n + 1)
+  const fileMenu = useFileMenu({ paneId, paneRef, reload })
 
   useEffect(() => {
     if (selfNavigating.current) {
@@ -69,25 +75,32 @@ export function ColumnView({ paneId, onPreview, onClearPreview }: Props) {
 
   return (
     <div
-      ref={scrollRef}
-      className="flex h-full overflow-x-auto overflow-y-hidden bg-background/40"
+      ref={paneRef}
+      className="flex h-full bg-background/40 relative"
       onClick={() => setActivePaneId(paneId)}
+      onContextMenu={(e) => {
+        if (e.target === e.currentTarget) fileMenu.openBgMenu(e, pane.path)
+      }}
     >
-      {columns.map((colPath, i) => (
-        <ColumnPanel
-          key={`${i}-${colPath}`}
-          path={colPath}
-          showHidden={showHidden}
-          selectedPath={selectedPaths[i] ?? null}
-          sortKey={pane.sortKey}
-          sortDir={pane.sortDir}
-          isLast={i === columns.length - 1}
-          onSelect={(entry) => handleSelect(i, entry)}
-          onOpen={handleOpen}
-        />
-      ))}
-      {/* Trailing spacer so the last column doesn't feel clipped */}
-      <div className="w-4 flex-shrink-0" />
+      <div ref={scrollRef} className="flex flex-1 overflow-x-auto overflow-y-hidden">
+        {columns.map((colPath, i) => (
+          <ColumnPanel
+            key={`${i}-${colPath}-${reloadKey}`}
+            path={colPath}
+            showHidden={showHidden}
+            selectedPath={selectedPaths[i] ?? null}
+            sortKey={pane.sortKey}
+            sortDir={pane.sortDir}
+            isLast={i === columns.length - 1}
+            onSelect={(entry) => handleSelect(i, entry)}
+            onOpen={handleOpen}
+            onContextMenu={(e, entry) => fileMenu.openMenu(e, entry)}
+            onBgContextMenu={(e) => fileMenu.openBgMenu(e, colPath)}
+          />
+        ))}
+        <div className="w-4 flex-shrink-0" />
+      </div>
+      {fileMenu.element}
     </div>
   )
 }
@@ -103,9 +116,11 @@ type ColumnPanelProps = {
   isLast: boolean
   onSelect: (entry: FileEntry) => void
   onOpen: (entry: FileEntry) => void
+  onContextMenu: (e: React.MouseEvent, entry: FileEntry) => void
+  onBgContextMenu: (e: React.MouseEvent) => void
 }
 
-function ColumnPanel({ path, showHidden, selectedPath, sortKey, sortDir, onSelect, onOpen }: ColumnPanelProps) {
+function ColumnPanel({ path, showHidden, selectedPath, sortKey, sortDir, onSelect, onOpen, onContextMenu, onBgContextMenu }: ColumnPanelProps) {
   const { entries, loading } = useDirectory(path, showHidden)
 
   const sorted = useMemo(
@@ -118,6 +133,7 @@ function ColumnPanel({ path, showHidden, selectedPath, sortKey, sortDir, onSelec
       <div
         className="flex-1 overflow-y-auto scrollbar-thin py-1"
         onClick={(e) => e.stopPropagation()}
+        onContextMenu={(e) => { if (e.target === e.currentTarget) onBgContextMenu(e) }}
       >
         {loading && (
           <div className="flex items-center justify-center h-12 text-muted-foreground text-xs">
@@ -125,7 +141,10 @@ function ColumnPanel({ path, showHidden, selectedPath, sortKey, sortDir, onSelec
           </div>
         )}
         {!loading && sorted.length === 0 && (
-          <div className="flex items-center justify-center h-12 text-muted-foreground text-xs">
+          <div
+            className="flex items-center justify-center h-12 text-muted-foreground text-xs"
+            onContextMenu={onBgContextMenu}
+          >
             Empty folder
           </div>
         )}
@@ -136,6 +155,7 @@ function ColumnPanel({ path, showHidden, selectedPath, sortKey, sortDir, onSelec
             selected={selectedPath === entry.path}
             onClick={() => onSelect(entry)}
             onDoubleClick={() => onOpen(entry)}
+            onContextMenu={(e) => onContextMenu(e, entry)}
           />
         ))}
       </div>
@@ -146,17 +166,19 @@ function ColumnPanel({ path, showHidden, selectedPath, sortKey, sortDir, onSelec
 /* ── Column row ── */
 
 function ColumnRow({
-  entry, selected, onClick, onDoubleClick,
+  entry, selected, onClick, onDoubleClick, onContextMenu,
 }: {
   entry: FileEntry
   selected: boolean
   onClick: () => void
   onDoubleClick: () => void
+  onContextMenu: (e: React.MouseEvent) => void
 }) {
   return (
     <div
       onClick={onClick}
       onDoubleClick={onDoubleClick}
+      onContextMenu={onContextMenu}
       className={[
         'flex items-center gap-3 px-3 py-[6px] cursor-default select-none text-[13px] mx-1 rounded-md',
         selected
