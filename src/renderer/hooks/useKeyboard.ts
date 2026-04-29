@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { usePaneStore } from '../store/paneStore'
 import { useFileOps } from './useFileOps'
 import { useSearchStore } from '../store/searchStore'
+import { useHistoryStore } from '../store/historyStore'
 
 type Options = {
   onRefresh?: () => void
@@ -13,9 +14,11 @@ type Options = {
 }
 
 export function useKeyboard(options: Options = {}) {
-  const { activePaneId, panes, navigateBack, navigateForward, navigateUp, toggleHidden, setViewMode } = usePaneStore()
+  const { activePaneId, panes, navigateBack, navigateForward, navigateUp, toggleHidden, setViewMode, newTab, closeTab, activeTabId, switchTab, tabs } = usePaneStore()
   const { cut, copy, paste, deleteFiles, duplicate, copyPath } = useFileOps(options.onRefresh)
   const focusSearch = useSearchStore((s) => s.focusSearch)
+  const undo = useHistoryStore((s) => s.undo)
+  const redo = useHistoryStore((s) => s.redo)
 
   useEffect(() => {
     function isInput(target: EventTarget | null) {
@@ -45,6 +48,16 @@ export function useKeyboard(options: Options = {}) {
         e.preventDefault(); deleteFiles(sel); return
       }
 
+      if (meta && shift && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault()
+        redo().then(() => options.onRefresh?.()).catch((err) => alert(`Redo failed: ${err}`))
+        return
+      }
+      if (meta && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault()
+        undo().then(() => options.onRefresh?.()).catch((err) => alert(`Undo failed: ${err}`))
+        return
+      }
       if (meta && e.key === 'a') { e.preventDefault(); options.onSelectAll?.(); return }
       if (meta && e.key === 'r') { e.preventDefault(); options.onRefresh?.(); return }
       if (meta && shift && e.key === '.') { e.preventDefault(); toggleHidden(); return }
@@ -62,7 +75,28 @@ export function useKeyboard(options: Options = {}) {
       if (meta && e.key === '4') { e.preventDefault(); setViewMode('gallery'); return }
 
       if (e.key === ' ' && sel.length === 1) { e.preventDefault(); options.onQuickLook?.(sel[0]); return }
-      if (meta && e.key === 't') { e.preventDefault(); options.onOpenInTerminal?.(pane.path); return }
+      if (meta && e.altKey && e.key === 't') { e.preventDefault(); options.onOpenInTerminal?.(pane.path); return }
+      if (meta && e.key === 't') { e.preventDefault(); newTab(activePaneId); return }
+      if (meta && e.key === 'w') {
+        e.preventDefault()
+        const list = tabs[activePaneId]
+        if (list.length > 1) closeTab(activePaneId, activeTabId[activePaneId])
+        return
+      }
+      if (meta && shift && e.key === ']') {
+        e.preventDefault()
+        const list = tabs[activePaneId]
+        const idx = list.findIndex((t) => t.id === activeTabId[activePaneId])
+        if (idx >= 0 && idx < list.length - 1) switchTab(activePaneId, list[idx + 1].id)
+        return
+      }
+      if (meta && shift && e.key === '[') {
+        e.preventDefault()
+        const list = tabs[activePaneId]
+        const idx = list.findIndex((t) => t.id === activeTabId[activePaneId])
+        if (idx > 0) switchTab(activePaneId, list[idx - 1].id)
+        return
+      }
     }
 
     window.addEventListener('keydown', handleKey)

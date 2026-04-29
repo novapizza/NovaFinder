@@ -9,6 +9,7 @@ import { parseSmartFolderId, useSmartFoldersStore } from '../../store/smartFolde
 import { useFileOps } from '../../hooks/useFileOps'
 import { sortEntries } from '../../lib/sort'
 import { useFileMenu } from '../../hooks/useFileMenu'
+import { useHistoryStore } from '../../store/historyStore'
 import { useSearchStore } from '../../store/searchStore'
 import { useTagStore, type TagColor, EMPTY_TAGS } from '../../store/tagStore'
 import { useRecentsStore, RECENTS_PATH } from '../../store/recentsStore'
@@ -225,6 +226,32 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
 
   function clearSelection() { setSelection(paneId, []); onClearPreview?.() }
 
+  function handleDragStartItem(entry: { path: string }, e: React.DragEvent) {
+    const paths = pane.selection.includes(entry.path) && pane.selection.length > 0
+      ? pane.selection
+      : [entry.path]
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('application/x-novafinder-paths', JSON.stringify(paths))
+  }
+
+  async function handleDropOnFolder(folderPath: string, sources: string[]) {
+    const pairs: { src: string; dst: string }[] = []
+    for (const src of sources) {
+      if (src === folderPath) continue
+      const name = src.split('/').pop() ?? ''
+      const dst = `${folderPath}/${name}`
+      if (src === dst) continue
+      try {
+        await window.fs.move(src, dst)
+        pairs.push({ src, dst })
+      } catch (err) {
+        alert(`Move failed: ${err}`)
+      }
+    }
+    if (pairs.length) useHistoryStore.getState().push({ kind: 'move', pairs })
+    reload()
+  }
+
   const fileMenu = useFileMenu({
     paneId,
     paneRef,
@@ -299,6 +326,8 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
                 startInEdit={renamingPath === entry.path}
                 onEditDone={() => setRenamingPath(null)}
                 gitStatus={gitStatus[entry.name]}
+                onDragStartItem={handleDragStartItem}
+                onDropOnFolder={handleDropOnFolder}
               />
             ))}
           </>
@@ -328,6 +357,8 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
             onPendingCommit={commitPending}
             onPendingCancel={() => setPendingNew(null)}
             gitStatusMap={gitStatus}
+            onDragStartItem={handleDragStartItem}
+            onDropOnFolder={handleDropOnFolder}
           />
         )}
       </div>

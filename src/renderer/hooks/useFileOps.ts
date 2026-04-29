@@ -1,10 +1,12 @@
 import path from 'path-browserify'
 import { usePaneStore } from '../store/paneStore'
 import { useClipboardStore } from '../store/clipboardStore'
+import { useHistoryStore } from '../store/historyStore'
 
 export function useFileOps(onReload?: () => void) {
   const { panes, activePaneId, setSelection } = usePaneStore()
   const { files: clipFiles, operation, setCut, setCopy, clear } = useClipboardStore()
+  const pushHistory = useHistoryStore((s) => s.push)
 
   const activePane = panes[activePaneId]
 
@@ -33,6 +35,8 @@ export function useFileOps(onReload?: () => void) {
   async function paste(destDir?: string) {
     const dest = destDir ?? activePane.path
     if (!clipFiles.length || !operation) return
+    const movePairs: { src: string; dst: string }[] = []
+    const copied: string[] = []
     for (const src of clipFiles) {
       const srcDir = path.dirname(src)
       const srcName = path.basename(src)
@@ -44,29 +48,40 @@ export function useFileOps(onReload?: () => void) {
       try {
         if (operation === 'cut') {
           await window.fs.rename(src, destPath)
+          movePairs.push({ src, dst: destPath })
         } else {
           await window.fs.copy(src, destPath)
+          copied.push(destPath)
         }
       } catch (e) {
         alert(`Failed to paste ${srcName}: ${e}`)
       }
     }
-    if (operation === 'cut') clear()
+    if (operation === 'cut') {
+      clear()
+      if (movePairs.length) pushHistory({ kind: 'move', pairs: movePairs })
+    } else if (copied.length) {
+      pushHistory({ kind: 'copy', created: copied })
+    }
     onReload?.()
   }
 
   async function duplicate(paths: string[]) {
+    const created: string[] = []
     for (const src of paths) {
       const dir = path.dirname(src)
       const ext = path.extname(src)
       const base = path.basename(src, ext)
       const newName = await uniqueName(dir, `${base} copy${ext}`)
       try {
-        await window.fs.copy(src, path.join(dir, newName))
+        const dest = path.join(dir, newName)
+        await window.fs.copy(src, dest)
+        created.push(dest)
       } catch (e) {
         alert(`Duplicate failed: ${e}`)
       }
     }
+    if (created.length) pushHistory({ kind: 'copy', created })
     onReload?.()
   }
 
@@ -84,19 +99,25 @@ async function deleteFiles(paths: string[]) {
 
   async function newFolder(parentDir: string, name: string) {
     const finalName = await uniqueName(parentDir, name)
-    await window.fs.mkdir(path.join(parentDir, finalName))
+    const full = path.join(parentDir, finalName)
+    await window.fs.mkdir(full)
+    pushHistory({ kind: 'create', path: full })
     onReload?.()
   }
 
   async function newFile(parentDir: string, name: string) {
     const finalName = await uniqueName(parentDir, name)
-    await window.fs.writeFile(path.join(parentDir, finalName), '')
+    const full = path.join(parentDir, finalName)
+    await window.fs.writeFile(full, '')
+    pushHistory({ kind: 'create', path: full })
     onReload?.()
   }
 
   async function rename(filePath: string, newName: string) {
     const dir = path.dirname(filePath)
-    await window.fs.rename(filePath, path.join(dir, newName))
+    const dest = path.join(dir, newName)
+    await window.fs.rename(filePath, dest)
+    pushHistory({ kind: 'rename', from: filePath, to: dest })
     onReload?.()
   }
 

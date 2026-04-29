@@ -1,4 +1,4 @@
-import { ipcMain, shell, clipboard } from 'electron'
+import { ipcMain, shell, clipboard, dialog } from 'electron'
 import fs from 'fs/promises'
 import fsSync from 'fs'
 import path from 'path'
@@ -323,6 +323,54 @@ export function registerFsHandlers() {
         else resolve()
       })
     })
+  })
+
+  ipcMain.handle('apps:list', async () => {
+    const home = os.homedir()
+    const dirs = ['/Applications', '/System/Applications', path.join(home, 'Applications')]
+    const apps: { name: string; path: string }[] = []
+    const seen = new Set<string>()
+    for (const d of dirs) {
+      try {
+        const entries = await fs.readdir(d, { withFileTypes: true })
+        for (const e of entries) {
+          if (!e.name.endsWith('.app')) continue
+          const full = path.join(d, e.name)
+          if (seen.has(e.name)) continue
+          seen.add(e.name)
+          apps.push({ name: e.name.replace(/\.app$/, ''), path: full })
+        }
+      } catch {}
+    }
+    apps.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+    return apps
+  })
+
+  ipcMain.handle('apps:openWith', async (_e, appPath: string, filePaths: string[]) => {
+    if (!filePaths.length) return
+    await new Promise<void>((resolve, reject) => {
+      execFile('open', ['-a', appPath, ...filePaths], (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+  })
+
+  ipcMain.handle('apps:chooseAndOpen', async (_e, filePaths: string[]) => {
+    const result = await dialog.showOpenDialog({
+      defaultPath: '/Applications',
+      properties: ['openFile'],
+      filters: [{ name: 'Applications', extensions: ['app'] }],
+    })
+    if (result.canceled || !result.filePaths.length) return null
+    const appPath = result.filePaths[0]
+    await new Promise<void>((resolve, reject) => {
+      execFile('open', ['-a', appPath, ...filePaths], (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+    return appPath
   })
 
   ipcMain.handle('fs:gitStatus', (_e, dirPath: string) => {

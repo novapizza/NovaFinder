@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { ContextMenu, type MenuItem } from '../components/ContextMenu'
 import { GetInfoModal } from '../components/GetInfoModal'
+import { OpenWithModal } from '../components/OpenWithModal'
+import { BatchRenameModal } from '../components/BatchRenameModal'
 import { usePaneStore } from '../store/paneStore'
 import { useClipboardStore } from '../store/clipboardStore'
 import { useTagStore, type TagColor } from '../store/tagStore'
@@ -22,7 +24,7 @@ type MenuState =
   | { kind: 'bg';   x: number; y: number; dirPath: string }
 
 export function useFileMenu({ paneId, paneRef, reload, onRequestRename, onRequestNew }: Options) {
-  const { panes, navigateTo, setSelection } = usePaneStore()
+  const { panes, navigateTo, setSelection, newTab } = usePaneStore()
   const pane = panes[paneId]
   const { rename, deleteFiles, paste, cut, copy, duplicate, copyPath } = useFileOps(reload)
   const clipboard = useClipboardStore()
@@ -32,6 +34,8 @@ export function useFileMenu({ paneId, paneRef, reload, onRequestRename, onReques
 
   const [menu, setMenu] = useState<MenuState | null>(null)
   const [infoPath, setInfoPath] = useState<string | null>(null)
+  const [openWithPaths, setOpenWithPaths] = useState<string[] | null>(null)
+  const [batchRenamePaths, setBatchRenamePaths] = useState<string[] | null>(null)
 
   function openMenu(e: React.MouseEvent, entry: Entry) {
     e.preventDefault()
@@ -86,7 +90,9 @@ export function useFileMenu({ paneId, paneRef, reload, onRequestRename, onReques
         if (targetIsDir) navigateTo(paneId, targetEntry.path)
         else window.fs.open(targetEntry.path)
       } },
+      ...(targetIsDir ? [{ label: 'Open in New Tab' as const, icon: 'open' as const, action: () => newTab(paneId, targetEntry.path) }] : []),
       { label: 'Open with Default App', icon: 'open-default', action: () => window.fs.open(targets[0]) },
+      { label: 'Open With…', icon: 'open-default', action: () => setOpenWithPaths(targets) },
       { label: 'Reveal in NovaFinder', icon: 'reveal', action: () => {
         const t = targets[0]
         const parent = t.replace(/\/[^/]+\/?$/, '') || '/'
@@ -110,15 +116,17 @@ export function useFileMenu({ paneId, paneRef, reload, onRequestRename, onReques
       { label: 'Copy Name', icon: 'copy-path', action: () => window.fs.writeClipboardText(targets.map((p) => p.split('/').pop() ?? p).join('\n')) },
       { label: 'Copy Path', icon: 'copy-path', action: () => copyPath(targets) },
       { separator: true },
-      { label: 'Rename', icon: 'rename', action: () => {
-        if (onRequestRename) {
+      { label: targets.length > 1 ? `Rename ${targets.length} Items…` : 'Rename', icon: 'rename', action: () => {
+        if (targets.length > 1) {
+          setBatchRenamePaths(targets)
+        } else if (onRequestRename) {
           onRequestRename(targets[0])
         } else {
           const cur = targets[0].split('/').pop() ?? ''
           const next = window.prompt('Rename', cur)
           if (next && next !== cur) rename(targets[0], next).catch((e) => alert(String(e)))
         }
-      }, disabled: targets.length !== 1 },
+      } },
       { separator: true },
       {
         tagsRow: true,
@@ -140,6 +148,14 @@ export function useFileMenu({ paneId, paneRef, reload, onRequestRename, onReques
         />
       )}
       {infoPath && <GetInfoModal filePath={infoPath} onClose={() => setInfoPath(null)} />}
+      {openWithPaths && <OpenWithModal filePaths={openWithPaths} onClose={() => setOpenWithPaths(null)} />}
+      {batchRenamePaths && (
+        <BatchRenameModal
+          paths={batchRenamePaths}
+          onClose={() => setBatchRenamePaths(null)}
+          onDone={reload}
+        />
+      )}
     </>
   )
 

@@ -210,11 +210,11 @@
 
   <div class="stats">
     <div class="stat">
-      <div class="stat-num green">50</div>
+      <div class="stat-num green">55</div>
       <div class="stat-label">File-manager features implemented</div>
     </div>
     <div class="stat">
-      <div class="stat-num red">5</div>
+      <div class="stat-num green">0</div>
       <div class="stat-label">Tier 1 — critical gaps</div>
     </div>
     <div class="stat">
@@ -247,32 +247,32 @@
         <tr>
           <td><div class="feature-name">Batch Rename</div></td>
           <td><span class="form-ref">Rename Finder Items…</span></td>
-          <td><span class="badge badge-missing">Missing</span></td>
-          <td class="note">Multi-select files → rename together with format/replace/sequence rules. Single-file rename works; bulk rename has no UI.</td>
+          <td><span class="badge badge-done">Done</span></td>
+          <td class="note">Multi-select files → context-menu "Rename N Items…" opens a modal with Find &amp; Replace, Sequence, and Format modes. Live preview, collision detection, two-phase rename to avoid clashes.</td>
         </tr>
         <tr>
           <td><div class="feature-name">Undo / Redo File Operations</div></td>
           <td><span class="form-ref">Edit → Undo</span></td>
-          <td><span class="badge badge-missing">Missing</span></td>
-          <td class="note">⌘Z to undo last move/rename/trash/copy. No undo stack exists today — once trashed/moved, the user must navigate back manually.</td>
+          <td><span class="badge badge-done">Done</span></td>
+          <td class="note">⌘Z / ⌘⇧Z undo and redo for rename, move, copy, duplicate, and create. Trash undo deferred (macOS Finder Put Back covers this).</td>
         </tr>
         <tr>
           <td><div class="feature-name">Visible Drag &amp; Drop Targets</div></td>
           <td><span class="form-ref">Drag &amp; drop</span></td>
-          <td><span class="badge badge-partial">Partial</span></td>
-          <td class="note">Move semantics exist in IPC, but the FileList lacks drop-target highlighting, drag-into-folder affordance, and inter-pane drag handling.</td>
+          <td><span class="badge badge-done">Done</span></td>
+          <td class="note">Files and folders are draggable; folder rows / tiles highlight on drag-over and accept drops to move items in. Multi-selection drags as a group; moves are recorded for undo.</td>
         </tr>
         <tr>
           <td><div class="feature-name">Open With… Submenu</div></td>
           <td><span class="form-ref">Open With ▸</span></td>
-          <td><span class="badge badge-missing">Missing</span></td>
-          <td class="note">Currently only "Open" (default app) and "Reveal in Finder". Missing list of alternative installed apps for the file's UTI.</td>
+          <td><span class="badge badge-done">Done</span></td>
+          <td class="note">Context-menu "Open With…" opens a searchable picker listing apps from /Applications, /System/Applications, and ~/Applications, plus "Choose Application…" for any other path. Launches via <code>open -a</code>.</td>
         </tr>
         <tr>
           <td><div class="feature-name">Tabs Within Window</div></td>
           <td><span class="form-ref">⌘T New Tab</span></td>
-          <td><span class="badge badge-missing">Missing</span></td>
-          <td class="note">Dual-pane exists, but no tab strip per pane. Users juggling many folders must cycle history or open new windows.</td>
+          <td><span class="badge badge-done">Done</span></td>
+          <td class="note">Tab strip above the file list. ⌘T opens a new tab, ⌘W closes one, ⌘⇧] / ⌘⇧[ cycle. Each tab keeps its own path, history, selection, sort, and tag filter.</td>
         </tr>
       </tbody>
     </table>
@@ -446,6 +446,11 @@
       <div class="impl-item">Copy path / copy name</div>
       <div class="impl-item">Context menus (file / column)</div>
       <div class="impl-item">Theme — light / dark / system</div>
+      <div class="impl-item">Tabs (⌘T / ⌘W / ⌘⇧[ / ⌘⇧])</div>
+      <div class="impl-item">Batch rename (find/seq/format)</div>
+      <div class="impl-item">Undo / redo (⌘Z / ⌘⇧Z)</div>
+      <div class="impl-item">Drag-and-drop into folders</div>
+      <div class="impl-item">Open With… app picker</div>
     </div>
   </div>
 

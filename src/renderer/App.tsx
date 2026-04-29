@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTagStore } from './store/tagStore'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import { Toolbar } from './components/Toolbar'
+import { TabBar } from './components/TabBar'
 import { Sidebar } from './components/Sidebar/Sidebar'
 import { FileList } from './components/FileList/FileList'
 import { PreviewPanel } from './components/PreviewPanel/PreviewPanel'
@@ -79,17 +80,19 @@ export default function App() {
               themeMode={themeMode}
               onToggleTheme={toggleTheme}
             />
-            <div className="h-3 shrink-0" />
             <PanelGroup direction="horizontal" className="flex-1 overflow-hidden min-h-0">
-              <Panel defaultSize={60} minSize={25} className="bg-background/40">
-                <FileList
-                  paneId="left"
-                  onPreview={(path, ext) => setPreviewFile({ path, ext })}
-                  onClearPreview={() => setPreviewFile(null)}
-                  registerReload={(fn) => { reloadFn.current = fn }}
-                  registerNewFolder={(fn) => { newFolderFn.current = fn }}
-                  registerNewFile={(fn) => { newFileFn.current = fn }}
-                />
+              <Panel defaultSize={60} minSize={25} className="bg-background/40 flex flex-col">
+                <TabBar paneId="left" />
+                <div className="flex-1 min-h-0">
+                  <FileList
+                    paneId="left"
+                    onPreview={(path, ext) => setPreviewFile({ path, ext })}
+                    onClearPreview={() => setPreviewFile(null)}
+                    registerReload={(fn) => { reloadFn.current = fn }}
+                    registerNewFolder={(fn) => { newFolderFn.current = fn }}
+                    registerNewFile={(fn) => { newFileFn.current = fn }}
+                  />
+                </div>
               </Panel>
 
               {showPreview && (

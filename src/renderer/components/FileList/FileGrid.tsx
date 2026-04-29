@@ -22,9 +22,11 @@ type Props = {
   onPendingCommit: (name: string) => void
   onPendingCancel: () => void
   gitStatusMap?: Record<string, string>
+  onDragStartItem?: (entry: FileEntry, e: React.DragEvent) => void
+  onDropOnFolder?: (folderPath: string, sources: string[]) => void
 }
 
-export function FileGrid({ entries, selection, onSelect, onOpen, onRename, onContextMenu, renamingPath, onEditDone, pendingNew, onPendingCommit, onPendingCancel, gitStatusMap }: Props) {
+export function FileGrid({ entries, selection, onSelect, onOpen, onRename, onContextMenu, renamingPath, onEditDone, pendingNew, onPendingCommit, onPendingCancel, gitStatusMap, onDragStartItem, onDropOnFolder }: Props) {
   return (
     <div className="grid gap-3 p-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(112px, 1fr))' }}>
       {pendingNew && (
@@ -46,6 +48,8 @@ export function FileGrid({ entries, selection, onSelect, onOpen, onRename, onCon
           startInEdit={renamingPath === entry.path}
           onEditDone={onEditDone}
           gitStatus={gitStatusMap?.[entry.name]}
+          onDragStartItem={onDragStartItem}
+          onDropOnFolder={onDropOnFolder}
         />
       ))}
     </div>
@@ -103,11 +107,14 @@ type TileProps = {
   startInEdit?: boolean
   onEditDone?: () => void
   gitStatus?: string
+  onDragStartItem?: (entry: FileEntry, e: React.DragEvent) => void
+  onDropOnFolder?: (folderPath: string, sources: string[]) => void
 }
 
-function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, startInEdit, onEditDone, gitStatus }: TileProps) {
+function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, startInEdit, onEditDone, gitStatus, onDragStartItem, onDropOnFolder }: TileProps) {
   const [editing, setEditing] = useState(!!startInEdit)
   const [name, setName] = useState(entry.name)
+  const [dropActive, setDropActive] = useState(false)
   const cutFiles = useClipboardStore((s) => s.files)
   const operation = useClipboardStore((s) => s.operation)
   const isCut = operation === 'cut' && cutFiles.includes(entry.path)
@@ -122,6 +129,28 @@ function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, 
 
   return (
     <button
+      draggable={!editing}
+      onDragStart={(e) => onDragStartItem?.(entry, e)}
+      onDragOver={(e) => {
+        if (!entry.isDirectory) return
+        const types = Array.from(e.dataTransfer.types)
+        if (!types.includes('application/x-novafinder-paths')) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        if (!dropActive) setDropActive(true)
+      }}
+      onDragLeave={() => setDropActive(false)}
+      onDrop={(e) => {
+        if (!entry.isDirectory) return
+        const raw = e.dataTransfer.getData('application/x-novafinder-paths')
+        setDropActive(false)
+        if (!raw) return
+        e.preventDefault()
+        try {
+          const paths: string[] = JSON.parse(raw)
+          onDropOnFolder?.(entry.path, paths)
+        } catch {}
+      }}
       onClick={(e) => onSelect(entry.path, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
       onDoubleClick={() => onOpen(entry)}
       onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onContextMenu(e, entry.path) }}
@@ -129,6 +158,7 @@ function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, 
         'group flex flex-col items-center gap-2 rounded-xl p-3 transition-all select-none',
         selected ? 'bg-primary/15 ring-1 ring-primary/40' : 'hover:bg-surface-2',
         isCut ? 'opacity-40' : '',
+        dropActive ? 'bg-primary/20 ring-2 ring-primary/70' : '',
       ].join(' ')}
     >
       <div

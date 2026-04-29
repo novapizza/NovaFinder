@@ -16,6 +16,8 @@ type Props = {
   startInEdit?: boolean
   onEditDone?: () => void
   gitStatus?: string
+  onDragStartItem?: (entry: FileEntry, e: React.DragEvent) => void
+  onDropOnFolder?: (folderPath: string, sources: string[]) => void
 }
 
 const KIND: Record<string, string> = {
@@ -36,9 +38,10 @@ function kindLabel(ext: string, isDirectory: boolean): string {
   return KIND[ext.toLowerCase()] || (ext ? `${ext.toUpperCase()} document` : 'Document')
 }
 
-export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContextMenu, startInEdit, onEditDone, gitStatus }: Props) {
+export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContextMenu, startInEdit, onEditDone, gitStatus, onDragStartItem, onDropOnFolder }: Props) {
   const [editing, setEditing] = useState(!!startInEdit)
   const [editName, setEditName] = useState(entry.name)
+  const [dropActive, setDropActive] = useState(false)
   const cutFiles = useClipboardStore((s) => s.files)
   const operation = useClipboardStore((s) => s.operation)
   const isCut = operation === 'cut' && cutFiles.includes(entry.path)
@@ -56,10 +59,33 @@ export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContext
 
   return (
     <div
+      draggable={!editing}
+      onDragStart={(e) => onDragStartItem?.(entry, e)}
+      onDragOver={(e) => {
+        if (!entry.isDirectory) return
+        const types = Array.from(e.dataTransfer.types)
+        if (!types.includes('application/x-novafinder-paths')) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        if (!dropActive) setDropActive(true)
+      }}
+      onDragLeave={() => setDropActive(false)}
+      onDrop={(e) => {
+        if (!entry.isDirectory) return
+        const raw = e.dataTransfer.getData('application/x-novafinder-paths')
+        setDropActive(false)
+        if (!raw) return
+        e.preventDefault()
+        try {
+          const paths: string[] = JSON.parse(raw)
+          onDropOnFolder?.(entry.path, paths)
+        } catch {}
+      }}
       className={[
         'grid grid-cols-[32px_minmax(0,1fr)_170px_100px_100px] items-center gap-2 px-3 py-1.5 cursor-default select-none text-[13px]',
         selected ? 'row-active' : 'row-hover',
         isCut ? 'opacity-40' : '',
+        dropActive ? 'ring-2 ring-primary/70 ring-inset bg-primary/10' : '',
       ].join(' ')}
       onClick={handleClick}
       onDoubleClick={() => onOpen(entry)}

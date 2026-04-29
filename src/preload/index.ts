@@ -44,6 +44,9 @@ contextBridge.exposeInMainWorld('fs', {
   unzip: (zipPath: string) => ipcRenderer.invoke('fs:unzip', zipPath),
   gitStatus: (dirPath: string) => ipcRenderer.invoke('fs:gitStatus', dirPath),
   openInTerminal: (dirPath: string) => ipcRenderer.invoke('shell:openInTerminal', dirPath),
+  listApps: () => ipcRenderer.invoke('apps:list'),
+  openWith: (appPath: string, filePaths: string[]) => ipcRenderer.invoke('apps:openWith', appPath, filePaths),
+  chooseAppAndOpen: (filePaths: string[]) => ipcRenderer.invoke('apps:chooseAndOpen', filePaths),
   watchStart: (p: string) => ipcRenderer.send('fs:watch:start', p),
   watchStop: (p: string) => ipcRenderer.send('fs:watch:stop', p),
   onWatchEvent: (cb: (e: { dirPath: string; eventType: string; filename: string }) => void) => {
@@ -88,6 +91,9 @@ declare global {
       unzip(zipPath: string): Promise<void>
       gitStatus(dirPath: string): Promise<Record<string, string>>
       openInTerminal(dirPath: string): Promise<void>
+      listApps(): Promise<{ name: string; path: string }[]>
+      openWith(appPath: string, filePaths: string[]): Promise<void>
+      chooseAppAndOpen(filePaths: string[]): Promise<string | null>
       watchStart(p: string): void
       watchStop(p: string): void
       onWatchEvent(cb: (e: { dirPath: string; eventType: string; filename: string }) => void): () => void
