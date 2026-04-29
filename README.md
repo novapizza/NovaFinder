@@ -4,16 +4,45 @@ A powerful, modern file manager for macOS built with Electron, React, and TypeSc
 
 ## Features
 
-- **Dual-pane navigation** — Browse and manage files side by side
-- **Quick Look** — Preview files instantly without opening them
-- **Pinned folders** — Keep your most-used directories one click away
-- **Recent folders** — Quickly jump back to recently visited locations
-- **Integrated terminal** — Run shell commands without leaving the app
-- **Zip / Unzip** — Compress and extract archives natively
-- **Git status badges** — See modified, staged, and untracked files at a glance
-- **Syntax highlighting** — View source files with full language support via Shiki
-- **PDF & Markdown preview** — Read documents inline
-- **Wide path bar** — Always know where you are in the filesystem
+### Navigation & Views
+- **Dual-pane navigation** — Browse and manage files side by side, with optional sync
+- **Four view modes** — List, Column, Gallery, and Icon/Grid
+- **Editable breadcrumb path bar** — Click to type a path or jump up the hierarchy
+- **Back / forward / up** with full history per pane
+- **Pinned favorites & recent folders** — One-click access to where you work
+- **Smart Folders** — Saved searches for kind, size, name, and content
+- **Arrow-key navigation** through file lists
+
+### File Operations
+- Copy, cut, paste, duplicate, single-file rename
+- Move to Trash, Empty Trash, cross-volume move
+- Zip / Unzip
+- New folder / new file
+- Drag-and-drop move (basic)
+
+### Search & Metadata
+- Filename and in-folder content search
+- Filters by kind and size
+- **Color tags** (7 colors) and a Get Info modal
+- Hidden files toggle (⇧⌘.)
+
+### Preview
+- **Quick Look** (Space) — image, video, PDF, text, HTML, and syntax-highlighted source via Shiki
+- Toggleable preview panel (⌘⇧P)
+
+### Sidebar
+- Favorites, Smart Folders, Volumes, Tags, Trash, and live disk usage
+
+### System Integration
+- Open with default app, Reveal in Finder, Open in Terminal
+- Copy path / copy name from context menu
+- **Git status badges** — modified, staged, and untracked at a glance
+- File watching with auto-refresh on external changes
+
+### Appearance
+- **Light / Dark / System** theme — follows macOS appearance live by default
+
+> See [features.html](features.html) for the full feature inventory and parity gaps vs macOS Finder.
 
 ## Tech Stack
 
@@ -63,13 +92,32 @@ The output will be placed in the `out/` directory.
 ```
 NovaFinder/
 ├── src/
-│   ├── main/        # Electron main process
+│   ├── main/        # Electron main process (IPC, fs, tags, watcher)
 │   ├── preload/     # Preload scripts (context bridge)
 │   └── renderer/    # React frontend
+│       ├── components/  # Toolbar, Sidebar, FileList, PreviewPanel, …
+│       ├── hooks/       # useTheme, useKeyboard, useFileOps, …
+│       └── store/       # Zustand stores (panes, tags, search, …)
+├── features.html        # Feature inventory & Finder parity gaps
 ├── electron.vite.config.ts
 ├── tsconfig.json
 └── package.json
 ```
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| ⌘← / ⌘→ | Back / Forward |
+| ⌘↑ | Up one folder |
+| Space | Quick Look |
+| ⌘⇧P | Toggle preview panel |
+| ⇧⌘. | Toggle hidden files |
+| ⌘A | Select all |
+| ⌘C / ⌘X / ⌘V | Copy / Cut / Paste |
+| ⌘D | Duplicate |
+| ⌘⌫ | Move to Trash |
+| ⌘I | Get Info |
 
 ## License
 
