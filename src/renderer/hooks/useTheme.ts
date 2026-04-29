@@ -1,28 +1,49 @@
 import { useEffect, useState } from 'react'
 
-type Theme = 'light' | 'dark'
+export type ThemeMode = 'system' | 'light' | 'dark'
+export type Theme = 'light' | 'dark'
 
 const STORAGE_KEY = 'nova-theme'
 
-function readInitial(): Theme {
+function readStoredMode(): ThemeMode {
+  if (typeof window === 'undefined') return 'system'
+  const stored = localStorage.getItem(STORAGE_KEY)
+  if (stored === 'light' || stored === 'dark' || stored === 'system') return stored
+  return 'system'
+}
+
+function getSystemTheme(): Theme {
   if (typeof window === 'undefined') return 'dark'
-  const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
-  if (stored === 'light' || stored === 'dark') return stored
-  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches
-  return prefersLight ? 'light' : 'dark'
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(readInitial)
+  const [mode, setMode] = useState<ThemeMode>(readStoredMode)
+  const [systemTheme, setSystemTheme] = useState<Theme>(getSystemTheme)
+
+  useEffect(() => {
+    const mql = window.matchMedia('(prefers-color-scheme: light)')
+    const onChange = (e: MediaQueryListEvent) => setSystemTheme(e.matches ? 'light' : 'dark')
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [])
+
+  const theme: Theme = mode === 'system' ? systemTheme : mode
 
   useEffect(() => {
     const root = document.documentElement
     root.classList.remove('light', 'dark')
     root.classList.add(theme)
-    localStorage.setItem(STORAGE_KEY, theme)
-  }, [theme])
+    localStorage.setItem(STORAGE_KEY, mode)
+  }, [theme, mode])
 
-  const toggle = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'))
+  const toggle = () => {
+    setMode((m) => {
+      if (m === 'system') return systemTheme === 'light' ? 'dark' : 'light'
+      if (m === 'light') return 'dark'
+      return 'system'
+    })
+  }
 
-  return { theme, toggle, setTheme }
+  return { theme, mode, toggle, setMode }
 }

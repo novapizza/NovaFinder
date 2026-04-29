@@ -24,7 +24,7 @@ export default function App() {
   const { activePaneId, panes, showHidden, setSelection } = usePaneStore()
   const { } = useFileOps()
   const loadTags = useTagStore((s) => s.load)
-  const { theme, toggle: toggleTheme } = useTheme()
+  const { theme, mode: themeMode, toggle: toggleTheme } = useTheme()
   useEffect(() => { loadTags() }, [loadTags])
 
   function handleRefresh() { reloadFn.current?.() }
@@ -76,6 +76,7 @@ export default function App() {
               onNewFolder={() => newFolderFn.current?.()}
               onNewFile={() => newFileFn.current?.()}
               theme={theme}
+              themeMode={themeMode}
               onToggleTheme={toggleTheme}
             />
             <div className="h-3 shrink-0" />

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NovaDirectory — Feature Gap vs macOS Finder</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      background: #0d1117;
+      color: #e6edf3;
+      padding: 40px 24px 80px;
+    }
+
+    .container { max-width: 960px; margin: 0 auto; }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f0f6fc;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #7d8590;
+      font-size: 13px;
+      margin-bottom: 36px;
+    }
+
+    /* Summary cards */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .stat {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+
+    .stat-num {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-label { font-size: 12px; color: #7d8590; }
+
+    .green  { color: #3fb950; }
+    .red    { color: #f85149; }
+    .yellow { color: #d29922; }
+    .blue   { color: #58a6ff; }
+
+    /* Tier sections */
+    .tier {
+      margin-bottom: 40px;
+    }
+
+    .tier-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .tier-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .t1 { background: #3d1515; color: #f85149; border: 1px solid #6e2a2a; }
+    .t2 { background: #2d2200; color: #d29922; border: 1px solid #5a430a; }
+    .t3 { background: #0d2338; color: #58a6ff; border: 1px solid #1a3a5c; }
+    .ti { background: #0e2a1a; color: #3fb950; border: 1px solid #1a4a2a; }
+
+    .tier-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #f0f6fc;
+    }
+
+    .tier-desc {
+      font-size: 12px;
+      color: #7d8590;
+      margin-left: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    thead tr { background: #1c2128; }
+
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #7d8590;
+      border-bottom: 1px solid #30363d;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #21262d;
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #1c2128; }
+
+    .feature-name {
+      font-weight: 600;
+      color: #f0f6fc;
+      font-size: 13px;
+    }
+
+    .form-ref {
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 11px;
+      color: #7d8590;
+      background: #21262d;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #8b949e;
+      margin-top: 3px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-missing  { background: #3d1515; color: #f85149; border: 1px solid #6e2a2a; }
+    .badge-partial  { background: #2d2200; color: #d29922; border: 1px solid #5a430a; }
+    .badge-done     { background: #0e2a1a; color: #3fb950; border: 1px solid #1a4a2a; }
+
+    /* Implemented section */
+    .impl-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .impl-item {
+      display: flex;
+      align-items: center;
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 7px;
+      padding: 8px 12px;
+      font-size: 12.5px;
+      color: #8b949e;
+      gap: 8px;
+    }
+
+    .impl-item::before {
+      content: "✓";
+      color: #3fb950;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid #21262d;
+      font-size: 12px;
+      color: #484f58;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>NovaDirectory — Feature Gap Analysis</h1>
+  <p class="subtitle">Compared against macOS Finder · Updated 2026-04-30</p>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num green">50</div>
+      <div class="stat-label">File-manager features implemented</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num red">5</div>
+      <div class="stat-label">Tier 1 — critical gaps</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num yellow">6</div>
+      <div class="stat-label">Tier 2 — important gaps</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num blue">5</div>
+      <div class="stat-label">Tier 3 — advanced (deferred)</div>
+    </div>
+  </div>
+
+  <!-- TIER 1 -->
+  <div class="tier">
+    <div class="tier-header">
+      <span class="tier-badge t1">1</span>
+      <span class="tier-title">Critical — Daily-use gaps</span>
+      <span class="tier-desc">Reached for multiple times a day by every Finder user</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:220px">Feature</th>
+          <th style="width:160px">Finder Reference</th>
+          <th style="width:90px">Status</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="feature-name">Batch Rename</div></td>
+          <td><span class="form-ref">Rename Finder Items…</span></td>
+          <td><span class="badge badge-missing">Missing</span></td>
+          <td class="note">Multi-select files → rename together with format/replace/sequence rules. Single-file rename works; bulk rename has no UI.</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">Undo / Redo File Operations</div></td>
+          <td><span class="form-ref">Edit → Undo</span></td>
+          <td><span class="badge badge-missing">Missing</span></td>
+          <td class="note">⌘Z to undo last move/rename/trash/copy. No undo stack exists today — once trashed/moved, the user must navigate back manually.</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">Visible Drag &amp; Drop Targets</div></td>
+          <td><span class="form-ref">Drag &amp; drop</span></td>
+          <td><span class="badge badge-partial">Partial</span></td>
+          <td class="note">Move semantics exist in IPC, but the FileList lacks drop-target highlighting, drag-into-folder affordance, and inter-pane drag handling.</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">Open With… Submenu</div></td>
+          <td><span class="form-ref">Open With ▸</span></td>
+          <td><span class="badge badge-missing">Missing</span></td>
+          <td class="note">Currently only "Open" (default app) and "Reveal in Finder". Missing list of alternative installed apps for the file's UTI.</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">Tabs Within Window</div></td>
+          <td><span class="form-ref">⌘T New Tab</span></td>
+          <td><span class="badge badge-missing">Missing</span></td>
+          <td class="note">Dual-pane exists, but no tab strip per pane. Users juggling many folders must cycle history or open new windows.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TIER 2 -->
+  <div class="tier">
+    <div class="tier-header">
+      <span class="tier-badge t2">2</span>
+      <span class="tier-title">Important — Frequent power-user features</span>
+      <span class="tier-desc">Used weekly; significant workflow gaps without them</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:220px">Feature</th>
+          <th style="width:160px">Finder Reference</th>
+          <th style="width:90px">Status</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="feature-name">Permissions Viewer / Editor</div></td>
+          <td><span class="form-ref">Get Info → Sharing &amp; Permissions</span></td>
+          <td><span class="badge badge-missing">Missing</span></td>
+          <td class="note">Get Info shows size/dates/path but not POSIX mode or owner/group. No UI to chmod/chown.</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">Copy / Move Progress UI</div></td>
+          <td><span class="form-ref">Copy progress sheet</span></td>
+          <td><span class="badge badge-missing">Missing</span></td>
+          <td class="note">Cross-volume copies and large transfers happen synchronously with no progress bar, ETA, or cancel button.</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">File Comments / Notes</div></td>
+          <td><span class="form-ref">Get Info → Comments</span></td>
+          <td><span class="badge badge-missing">Missing</span></td>
+          <td class="note">Free-text Spotlight comments per file. Tags exist; arbitrary notes do not.</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">Archive Formats Beyond Zip</div></td>
+          <td><span class="form-ref">Archive Utility</span></td>
+          <td><span class="badge badge-partial">Partial</span></td>
+          <td class="note">Zip / unzip implemented. Missing tar, tar.gz, 7z extraction (read-only at minimum).</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">Sidebar Customization</div></td>
+          <td><span class="form-ref">Finder → Settings → Sidebar</span></td>
+          <td><span class="badge badge-missing">Missing</span></td>
+          <td class="note">No way to reorder sections (Favorites / Smart / Recents / Volumes), hide them, or drag-reorder pinned folders.</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">Global / System-wide Search Scope</div></td>
+          <td><span class="form-ref">This Mac vs This Folder</span></td>
+          <td><span class="badge badge-partial">Partial</span></td>
+          <td class="note">Search and smart folders are scoped to the current directory. No "search This Mac" toggle.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TIER 3 -->
+  <div class="tier">
+    <div class="tier-header">
+      <span class="tier-badge t3">3</span>
+      <span class="tier-title">Advanced — Power-user / niche features</span>
+      <span class="tier-desc">Used occasionally; full parity with Finder requires these</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:220px">Feature</th>
+          <th style="width:160px">Finder Reference</th>
+          <th style="width:90px">Status</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="feature-name">Spring-Loaded Folders</div></td>
+          <td><span class="form-ref">Drag-hover open</span></td>
+          <td><span class="badge badge-missing">Deferred</span></td>
+          <td class="note">Hover a dragged item over a folder → folder opens after a delay so you can drill in mid-drag. Requires drop-target work first.</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">Symlink / Alias Creation</div></td>
+          <td><span class="form-ref">Make Alias (⌘L)</span></td>
+          <td><span class="badge badge-missing">Deferred</span></td>
+          <td class="note">No UI to create symlinks. Existing symlinks are followed but not visually distinguished.</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">Multi-Window Support</div></td>
+          <td><span class="form-ref">⌘N New Finder Window</span></td>
+          <td><span class="badge badge-missing">Deferred</span></td>
+          <td class="note">Single Electron window only. Dual-pane partially compensates but doesn't replace independent windows.</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">iCloud Drive Surface</div></td>
+          <td><span class="form-ref">Sidebar → iCloud Drive</span></td>
+          <td><span class="badge badge-missing">Deferred</span></td>
+          <td class="note">No native iCloud section, sync status pips, or "download / remove download" actions for cloud-only files.</td>
+        </tr>
+        <tr>
+          <td><div class="feature-name">Spotlight-Style Global Search</div></td>
+          <td><span class="form-ref">Spotlight (⌘Space)</span></td>
+          <td><span class="badge badge-missing">Deferred</span></td>
+          <td class="note">In-folder content search is implemented; system-wide indexed search across the whole machine is not. Big project — would need an index.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- IMPLEMENTED -->
+  <div class="tier">
+    <div class="tier-header">
+      <span class="tier-badge ti">✓</span>
+      <span class="tier-title">Already Implemented</span>
+      <span class="tier-desc">50+ file-manager capabilities across the app</span>
+    </div>
+    <div class="impl-grid">
+      <div class="impl-item">Copy / cut / paste</div>
+      <div class="impl-item">Duplicate</div>
+      <div class="impl-item">Single-file rename</div>
+      <div class="impl-item">Move to trash</div>
+      <div class="impl-item">Cross-volume move</div>
+      <div class="impl-item">Empty trash</div>
+      <div class="impl-item">New folder / new file</div>
+      <div class="impl-item">Zip / unzip</div>
+      <div class="impl-item">Back / forward / up</div>
+      <div class="impl-item">Editable breadcrumb path</div>
+      <div class="impl-item">Go-to-folder input</div>
+      <div class="impl-item">Recent folders</div>
+      <div class="impl-item">Pinned favorites</div>
+      <div class="impl-item">Smart folders (saved searches)</div>
+      <div class="impl-item">Trash view</div>
+      <div class="impl-item">Dual-pane view (synced)</div>
+      <div class="impl-item">Resizable panels</div>
+      <div class="impl-item">List view</div>
+      <div class="impl-item">Column view</div>
+      <div class="impl-item">Gallery view</div>
+      <div class="impl-item">Icon / grid view</div>
+      <div class="impl-item">Sort by name / size / modified / kind</div>
+      <div class="impl-item">Filename search</div>
+      <div class="impl-item">Content search (in-folder)</div>
+      <div class="impl-item">Filter by kind / size</div>
+      <div class="impl-item">Multi-select (⌘ click)</div>
+      <div class="impl-item">Range select (⇧ click)</div>
+      <div class="impl-item">Select all (⌘A)</div>
+      <div class="impl-item">Arrow-key navigation</div>
+      <div class="impl-item">Color tags (7 colors)</div>
+      <div class="impl-item">Get Info modal</div>
+      <div class="impl-item">Quick Look (Space)</div>
+      <div class="impl-item">Image preview</div>
+      <div class="impl-item">Video preview</div>
+      <div class="impl-item">PDF preview</div>
+      <div class="impl-item">Text preview</div>
+      <div class="impl-item">HTML preview</div>
+      <div class="impl-item">Preview panel toggle (⌘⇧P)</div>
+      <div class="impl-item">Sidebar — Favorites</div>
+      <div class="impl-item">Sidebar — Smart Folders</div>
+      <div class="impl-item">Sidebar — Volumes</div>
+      <div class="impl-item">Sidebar — Tags</div>
+      <div class="impl-item">Sidebar — Disk usage</div>
+      <div class="impl-item">Hidden files toggle (⇧⌘.)</div>
+      <div class="impl-item">File watching / auto-refresh</div>
+      <div class="impl-item">Git status badges</div>
+      <div class="impl-item">Open with default app</div>
+      <div class="impl-item">Reveal in Finder</div>
+      <div class="impl-item">Open in Terminal</div>
+      <div class="impl-item">Copy path / copy name</div>
+      <div class="impl-item">Context menus (file / column)</div>
+      <div class="impl-item">Theme — light / dark / system</div>
+    </div>
+  </div>
+
+  <footer>
+    Generated by Claude Code · NovaDirectory project · Reference: macOS Finder
+  </footer>
+
+</div>
+</body>
+</html>

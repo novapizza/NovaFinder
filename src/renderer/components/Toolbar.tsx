@@ -13,10 +13,11 @@ type Props = {
   onNewFolder: () => void
   onNewFile: () => void
   theme: 'light' | 'dark'
+  themeMode: 'system' | 'light' | 'dark'
   onToggleTheme: () => void
 }
 
-export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, onNewFile, theme, onToggleTheme }: Props) {
+export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, onNewFile, theme, themeMode, onToggleTheme }: Props) {
   const { activePaneId, panes, navigateTo, navigateBack, navigateForward, navigateUp, showHidden, toggleHidden, viewMode, setViewMode, syncPanes, setSyncPanes } = usePaneStore()
   const pane = panes[activePaneId]
   const [editing, setEditing] = useState(false)
@@ -129,7 +130,17 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
           >Empty Trash</button>
         )}
         <TBtn onClick={toggleHidden} active={showHidden} title="Show hidden files (⇧⌘.)"><DotIcon /></TBtn>
-        <TBtn onClick={onToggleTheme} title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+        <TBtn
+          onClick={onToggleTheme}
+          active={themeMode === 'system'}
+          title={
+            themeMode === 'system'
+              ? `Theme: System (${theme}) — click for light`
+              : themeMode === 'light'
+                ? 'Theme: Light — click for dark'
+                : 'Theme: Dark — click for system'
+          }
+        >
           {theme === 'light' ? <MoonIcon /> : <SunIcon />}
         </TBtn>
         <TBtn onClick={onTogglePreview} active={showPreview} title="Toggle preview (⌘⇧P)"><PreviewIcon /></TBtn>
