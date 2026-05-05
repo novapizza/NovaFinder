@@ -9,6 +9,7 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "dist": "npm run build && electron-builder",
+    "postdist": "rm -rf dist/mac-arm64 dist/mac dist/builder-debug.yml dist/builder-effective-config.yaml",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage"
@@ -21,7 +22,6 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-resizable-panels": "^2.1.7",
-    "shiki": "^1.22.0",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
@@ -45,13 +45,30 @@
   "build": {
     "appId": "io.nhunglc.novadirectory",
     "productName": "NovaFinder",
+    "compression": "maximum",
+    "asar": true,
+    "removePackageScripts": true,
+    "afterPack": "scripts/afterPack.js",
     "mac": {
       "target": "dmg",
       "category": "public.app-category.utilities",
-      "icon": "assets/icon.icns"
+      "icon": "assets/icon.icns",
+      "minimumSystemVersion": "11.0",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "dmg": {
+      "writeUpdateInfo": false
     },
     "files": [
-      "out/**/*"
+      "out/**/*",
+      "!**/{.DS_Store,.idea,.vscode,*.md,*.map,*.test.*,__tests__,test,tests,coverage}",
+      "!**/node_modules/*/{LICENSE*,README*,CHANGELOG*,HISTORY*,readme*,history*}",
+      "!**/node_modules/*/*.{md,markdown,d.ts.map}",
+      "!**/node_modules/.bin",
+      "!**/node_modules/**/{*.flow,*.ts,tsconfig.json}"
     ],
     "extraResources": [
       {

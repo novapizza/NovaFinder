@@ -12,16 +12,18 @@ const pane = (path = '/') => ({
   tagFilter: null,
 })
 
-const initialState = {
-  activePaneId: 'left' as const,
-  panes: { left: pane('/'), right: pane('/') },
-  showHidden: false,
-  syncPanes: false,
-  viewMode: 'icon' as const,
-}
-
 beforeEach(() => {
-  usePaneStore.setState(initialState)
+  const left0 = { id: 'L0', ...pane('/') }
+  const right0 = { id: 'R0', ...pane('/') }
+  usePaneStore.setState({
+    activePaneId: 'left',
+    panes: { left: pane('/'), right: pane('/') },
+    tabs: { left: [left0], right: [right0] },
+    activeTabId: { left: left0.id, right: right0.id },
+    showHidden: false,
+    syncPanes: false,
+    viewMode: 'icon',
+  })
 })
 
 describe('paneStore', () => {

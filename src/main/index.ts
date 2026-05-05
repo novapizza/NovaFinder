@@ -69,10 +69,11 @@ function buildMenu(win: BrowserWindow) {
 }
 
 function createWindow() {
-  const iconPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'icon.png')
-    : path.join(app.getAppPath(), 'assets', 'icon.png')
-  if (process.platform === 'darwin') app.dock.setIcon(iconPath)
+  // In production the .app bundle icon is used; dock.setIcon is only useful in dev.
+  if (!app.isPackaged && process.platform === 'darwin') {
+    app.dock.setIcon(path.join(app.getAppPath(), 'assets', 'icon.png'))
+  }
+
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -80,7 +81,7 @@ function createWindow() {
     minHeight: 500,
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#0a0a0a',
-    icon: iconPath,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -93,6 +94,8 @@ function createWindow() {
 
   registerWatcherHandlers(win)
   buildMenu(win)
+
+  win.once('ready-to-show', () => win.show())
 
   if (process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])

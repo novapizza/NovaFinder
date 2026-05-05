@@ -1,10 +1,17 @@
+import { lazy, Suspense } from 'react'
 import { isImageExt, isVideoExt, isPdfExt, isHtmlPreviewExt, isTextExt } from '../../lib/fileIcons'
 import { ImagePreview } from './ImagePreview'
 import { VideoPreview } from './VideoPreview'
-import { PdfPreview } from './PdfPreview'
-import { HtmlPreview } from './HtmlPreview'
 import { TextPreview } from './TextPreview'
 import { MetaInfo } from './MetaInfo'
+
+// Heavy preview deps (pdfjs-dist ~37MB, marked) load only when first used.
+const PdfPreview = lazy(() => import('./PdfPreview').then((m) => ({ default: m.PdfPreview })))
+const HtmlPreview = lazy(() => import('./HtmlPreview').then((m) => ({ default: m.HtmlPreview })))
+
+function PreviewLoading() {
+  return <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Loading…</div>
+}
 
 function EyeIcon() {
   return <svg className="h-7 w-7 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -36,8 +43,16 @@ export function PreviewPanel({ filePath, ext }: Props) {
     <div className="h-full flex flex-col overflow-hidden" style={{ paddingTop: 10, paddingLeft: 12, paddingRight: 12 }}>
       {isImageExt(ext) && <ImagePreview filePath={filePath} />}
       {isVideoExt(ext) && <VideoPreview filePath={filePath} />}
-      {isPdfExt(ext) && <PdfPreview filePath={filePath} />}
-      {isHtmlPreviewExt(ext) && <HtmlPreview filePath={filePath} ext={ext} />}
+      {isPdfExt(ext) && (
+        <Suspense fallback={<PreviewLoading />}>
+          <PdfPreview filePath={filePath} />
+        </Suspense>
+      )}
+      {isHtmlPreviewExt(ext) && (
+        <Suspense fallback={<PreviewLoading />}>
+          <HtmlPreview filePath={filePath} ext={ext} />
+        </Suspense>
+      )}
       {isTextExt(ext) && !isImageExt(ext) && !isVideoExt(ext) && !isPdfExt(ext) && !isHtmlPreviewExt(ext) && (
         <TextPreview filePath={filePath} />
       )}
