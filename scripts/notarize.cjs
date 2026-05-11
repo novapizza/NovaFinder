@@ -66,6 +66,6 @@ exports.default = async function notarizing(context) {
 
   console.log('[notarize] Notarization complete.')
 
-  // await stapleApp({ appPath })
-  // console.log('[notarize] Staple complete.')
+  execFileSync('xcrun', ['stapler', 'staple', appPath], { stdio: 'inherit' })
+  console.log('[notarize] Staple complete.')
 }
