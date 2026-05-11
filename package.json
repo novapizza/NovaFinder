@@ -9,6 +9,7 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "dist": "npm run build && electron-builder",
+    "package:mac": "npm run build && electron-builder --mac --config electron-builder.cjs",
     "postdist": "rm -rf dist/mac-arm64 dist/mac dist/builder-debug.yml dist/builder-effective-config.yaml",
     "test": "vitest",
     "test:run": "vitest run",

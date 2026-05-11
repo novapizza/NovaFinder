@@ -4,3 +4,4 @@ out/
 dist-electron/
 *.tsbuildinfo
 .DS_Store
+.claude/settings.json
