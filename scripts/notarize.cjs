@@ -21,7 +21,7 @@
  * so local builds without notarization credentials are not blocked.
  */
 
-const { notarize, stapleApp } = require('@electron/notarize')
+const { notarize } = require('@electron/notarize')
 const { execFileSync } = require('child_process')
 
 exports.default = async function notarizing(context) {
@@ -66,6 +66,6 @@ exports.default = async function notarizing(context) {
 
   console.log('[notarize] Notarization complete.')
 
-  await stapleApp({ appPath })
-  console.log('[notarize] Staple complete.')
+  // await stapleApp({ appPath })
+  // console.log('[notarize] Staple complete.')
 }
