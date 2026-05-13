@@ -94,23 +94,49 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
         ) : (
           <button
             onClick={startEdit}
-            className="w-full flex items-center gap-1 text-left bg-surface-2/60 hover:bg-surface-2 px-3 py-1.5 rounded-lg transition-colors min-h-[34px] border border-border/40"
+            title={pane.path}
+            className="w-full flex items-center gap-1 text-left bg-surface-2/60 hover:bg-surface-2 px-3 py-1.5 rounded-lg transition-colors min-h-[34px] border border-border/40 overflow-hidden"
           >
             {segments.length === 1 && segments[0] === '' ? (
               <span className="text-foreground text-[13px]">/</span>
-            ) : (
-              segments.map((seg, i) => (
-                <span key={i} className="flex items-center gap-1">
-                  <span
-                    className={i === segments.length - 1 ? 'text-foreground font-medium text-[13px]' : 'text-muted-foreground text-[13px] hover:text-foreground'}
-                    onClick={(e) => { e.stopPropagation(); navigateTo(activePaneId, '/' + segments.slice(0, i + 1).join('/')) }}
-                  >
-                    {seg}
-                  </span>
-                  {i < segments.length - 1 && <ChevronSmallIcon />}
-                </span>
-              ))
-            )}
+            ) : (() => {
+              const MAX_SEGMENTS = 4
+              const hidden = Math.max(0, segments.length - MAX_SEGMENTS)
+              const visible = hidden > 0 ? segments.slice(hidden) : segments
+              const visibleStart = hidden
+              return (
+                <>
+                  {hidden > 0 && (
+                    <span className="flex items-center gap-1 shrink-0">
+                      <span
+                        className="text-muted-foreground text-[13px] hover:text-foreground"
+                        title={'/' + segments.slice(0, hidden).join('/')}
+                        onClick={(e) => { e.stopPropagation(); navigateTo(activePaneId, '/' + segments.slice(0, hidden).join('/')) }}
+                      >…</span>
+                      <ChevronSmallIcon />
+                    </span>
+                  )}
+                  {visible.map((seg, i) => {
+                    const absIdx = visibleStart + i
+                    const isLast = absIdx === segments.length - 1
+                    return (
+                      <span key={absIdx} className="flex items-center gap-1 min-w-0">
+                        <span
+                          className={[
+                            'truncate max-w-[160px] text-[13px]',
+                            isLast ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground',
+                          ].join(' ')}
+                          onClick={(e) => { e.stopPropagation(); navigateTo(activePaneId, '/' + segments.slice(0, absIdx + 1).join('/')) }}
+                        >
+                          {seg}
+                        </span>
+                        {!isLast && <ChevronSmallIcon />}
+                      </span>
+                    )
+                  })}
+                </>
+              )
+            })()}
           </button>
         )}
       </div>
