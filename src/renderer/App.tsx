@@ -13,6 +13,7 @@ import { useTheme } from './hooks/useTheme'
 import { usePaneStore } from './store/paneStore'
 import { useFileOps } from './hooks/useFileOps'
 import { PromptModal } from './components/PromptModal'
+import { useSearchStore } from './store/searchStore'
 
 export default function App() {
   const [showPreview, setShowPreview] = useState(true)
@@ -22,11 +23,18 @@ export default function App() {
   const newFolderFn = useRef<(() => void) | null>(null)
   const newFileFn = useRef<(() => void) | null>(null)
 
-  const { activePaneId, panes, showHidden, setSelection } = usePaneStore()
+  const { activePaneId, panes, activeTabId, showHidden, setSelection } = usePaneStore()
   const { } = useFileOps()
   const loadTags = useTagStore((s) => s.load)
   const { theme, mode: themeMode, toggle: toggleTheme } = useTheme()
+  const clearSearch = useSearchStore((s) => s.clear)
   useEffect(() => { loadTags() }, [loadTags])
+
+  // Clear search whenever the active path/tab changes so it doesn't persist
+  // across tab switches or folder navigations.
+  const activePath = panes[activePaneId].path
+  const activeTab = activeTabId[activePaneId]
+  useEffect(() => { clearSearch() }, [activePath, activePaneId, activeTab, clearSearch])
 
   function handleRefresh() { reloadFn.current?.() }
 

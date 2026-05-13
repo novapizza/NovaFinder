@@ -296,7 +296,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
         className="flex-1 overflow-y-auto scrollbar-thin"
         onClick={(e) => { if (e.target === e.currentTarget) clearSelection() }}
       >
-        {(loading || smartLoading) && !isSearching && <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">Loading…</div>}
+        {(loading || smartLoading) && !isSearching && sorted.length === 0 && !pendingNew && <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">Loading…</div>}
         {isSearching && searching && <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">Searching…</div>}
         {error && !isSearching && <PermissionError error={error} path={pane.path} onRetry={() => reload()} />}
         {!loading && !error && !searching && sorted.length === 0 && !pendingNew && (
@@ -314,7 +314,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
                 onCancel={() => setPendingNew(null)}
               />
             )}
-            {!loading && !error && sorted.map((entry) => (
+            {!error && sorted.map((entry) => (
               <FileRow
                 key={entry.path}
                 entry={entry}
@@ -333,7 +333,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
           </>
         )}
 
-        {viewMode === 'gallery' && !loading && !error && (
+        {viewMode === 'gallery' && !error && (
           <GalleryView
             entries={sorted}
             selection={pane.selection}
@@ -343,7 +343,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
           />
         )}
 
-        {(viewMode === 'icon' || (viewMode === 'column' && isVirtualMode)) && !loading && !error && (
+        {(viewMode === 'icon' || (viewMode === 'column' && isVirtualMode)) && !error && (
           <FileGrid
             entries={sorted}
             selection={pane.selection}
