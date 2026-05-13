@@ -61,6 +61,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const paneRef = useRef<HTMLDivElement>(null)
+  const typeBufferRef = useRef<{ buf: string; at: number }>({ buf: '', at: 0 })
   const addRecentFolder = useRecentFoldersStore((s) => s.add)
   const gitStatus = useGitStatus(isVirtualMode ? '' : pane.path)
 
@@ -162,6 +163,17 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
         e.preventDefault()
         const entry = sorted.find((en) => en.path === pane.selection[0])
         if (entry) handleOpen(entry)
+      } else if (/^[A-Za-z0-9]$/.test(e.key) && !e.repeat) {
+        // Finder-style type-ahead: jump to first entry whose name starts
+        // with the accumulated buffer. Buffer resets after 600ms idle.
+        e.preventDefault()
+        const now = Date.now()
+        const prev = typeBufferRef.current
+        const fresh = now - prev.at > 600
+        const buf = (fresh ? '' : prev.buf) + e.key.toLowerCase()
+        typeBufferRef.current = { buf, at: now }
+        const match = sorted.findIndex((en) => en.name.toLowerCase().startsWith(buf))
+        if (match >= 0) selectIdx(match)
       }
     }
 

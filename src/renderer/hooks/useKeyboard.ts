@@ -38,7 +38,9 @@ export function useKeyboard(options: Options = {}) {
       if (meta && e.key === 'ArrowLeft') { e.preventDefault(); navigateBack(activePaneId); return }
       if (meta && e.key === 'ArrowRight') { e.preventDefault(); navigateForward(activePaneId); return }
       if (meta && e.key === 'ArrowUp') { e.preventDefault(); navigateUp(activePaneId); return }
-      if (e.key === 'Backspace' && !meta) { e.preventDefault(); navigateUp(activePaneId); return }
+      // Bare Backspace is NOT bound to navigate-up: IMEs (Vietnamese Telex, etc.)
+      // emit synthetic Backspace events during composition, which would jump to
+      // the parent folder. Finder uses Cmd+↑ for this anyway.
 
       if (meta && e.key === 'x' && sel.length) { e.preventDefault(); cut(sel); return }
       if (meta && e.key === 'c' && sel.length) { e.preventDefault(); copy(sel); return }
