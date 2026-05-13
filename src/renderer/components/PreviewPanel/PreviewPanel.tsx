@@ -5,9 +5,10 @@ import { VideoPreview } from './VideoPreview'
 import { TextPreview } from './TextPreview'
 import { MetaInfo } from './MetaInfo'
 
-// Heavy preview deps (pdfjs-dist ~37MB, marked) load only when first used.
+// Heavy preview deps (pdfjs-dist ~37MB, marked, react-markdown, mermaid) load only when first used.
 const PdfPreview = lazy(() => import('./PdfPreview').then((m) => ({ default: m.PdfPreview })))
 const HtmlPreview = lazy(() => import('./HtmlPreview').then((m) => ({ default: m.HtmlPreview })))
+const MarkdownPreview = lazy(() => import('./MarkdownPreview').then((m) => ({ default: m.MarkdownPreview })))
 
 function PreviewLoading() {
   return <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Loading…</div>
@@ -48,7 +49,12 @@ export function PreviewPanel({ filePath, ext }: Props) {
           <PdfPreview filePath={filePath} />
         </Suspense>
       )}
-      {isHtmlPreviewExt(ext) && (
+      {ext.toLowerCase() === 'md' && (
+        <Suspense fallback={<PreviewLoading />}>
+          <MarkdownPreview filePath={filePath} />
+        </Suspense>
+      )}
+      {(ext.toLowerCase() === 'html' || ext.toLowerCase() === 'htm') && (
         <Suspense fallback={<PreviewLoading />}>
           <HtmlPreview filePath={filePath} ext={ext} />
         </Suspense>

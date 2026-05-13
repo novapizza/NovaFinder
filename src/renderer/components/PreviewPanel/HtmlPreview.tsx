@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { marked } from 'marked'
 
 type Props = { filePath: string; ext: string }
 
@@ -62,7 +61,7 @@ const IFRAME_STYLES = `
   </style>
 `
 
-export function HtmlPreview({ filePath, ext }: Props) {
+export function HtmlPreview({ filePath }: Props) {
   const [srcDoc, setSrcDoc] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -70,24 +69,14 @@ export function HtmlPreview({ filePath, ext }: Props) {
     setLoading(true)
     setSrcDoc(null)
     window.fs.readTextFile(filePath)
-      .then(async (text) => {
+      .then((text) => {
         if (!text) { setSrcDoc(''); return }
-        if (ext === 'md') {
-          const html = await marked.parse(text)
-          setSrcDoc(`<html><head>${IFRAME_STYLES}</head><body>${html}</body></html>`)
-        } else {
-          // For .html — inject a dark base style on top of whatever the file has
-          const hasHtmlTag = /<html/i.test(text)
-          if (hasHtmlTag) {
-            setSrcDoc(text)
-          } else {
-            setSrcDoc(`<html><head>${IFRAME_STYLES}</head><body>${text}</body></html>`)
-          }
-        }
+        const hasHtmlTag = /<html/i.test(text)
+        setSrcDoc(hasHtmlTag ? text : `<html><head>${IFRAME_STYLES}</head><body>${text}</body></html>`)
       })
       .catch(() => setSrcDoc(null))
       .finally(() => setLoading(false))
-  }, [filePath, ext])
+  }, [filePath])
 
   if (loading) return (
     <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Loading…</div>
