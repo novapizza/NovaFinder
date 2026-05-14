@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { SpecialPaths } from '../../../preload'
 import { usePaneStore } from '../../store/paneStore'
-import { useTagStore, TAG_COLORS } from '../../store/tagStore'
+import { useTagStore, TAG_COLORS, tagPath, parseTagColor } from '../../store/tagStore'
 import { useRecentsStore, RECENTS_PATH } from '../../store/recentsStore'
 import { usePinnedStore } from '../../store/pinnedStore'
 import { useRecentFoldersStore } from '../../store/recentFoldersStore'
@@ -215,11 +215,11 @@ export function Sidebar() {
       {hasAnyTags && (
         <Group title="Tags" collapsed={!!collapsed.Tags} onToggle={() => toggle('Tags')}>
           {TAG_COLORS.filter(({ name }) => !!tagCounts[name]).map(({ name, label }) => {
-            const active = tagFilter === name
+            const active = parseTagColor(currentPath) === name
             return (
               <button
                 key={name}
-                onClick={() => setTagFilter(activePaneId, tagFilter === name ? null : name)}
+                onClick={() => { setTagFilter(activePaneId, null); navigateTo(activePaneId, tagPath(name)) }}
                 style={{ padding: '7px 9px' }}
                 className={`${ITEM_BASE} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
               >
@@ -228,17 +228,10 @@ export function Sidebar() {
                   style={{ backgroundColor: `var(--tag-${name})`, boxShadow: 'inset 0 0 0 0.5px hsl(0 0% 0% / 0.25)' }}
                 />
                 <span className="flex-1 truncate">{label}</span>
+                <span className="text-[11px] text-muted-foreground tabular-nums">{tagCounts[name]}</span>
               </button>
             )
           })}
-          <button
-            onClick={() => setTagFilter(activePaneId, null)}
-            style={{ padding: '7px 9px' }}
-            className={`${ITEM_BASE} ${ITEM_IDLE}`}
-          >
-            <AllTagsIcon />
-            <span className="flex-1 truncate">All Tags…</span>
-          </button>
         </Group>
       )}
     </div>

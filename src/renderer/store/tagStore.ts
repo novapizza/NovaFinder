@@ -6,6 +6,17 @@ export type TagColor = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple'
 // when used as a selector fallback in useSyncExternalStore.
 export const EMPTY_TAGS: TagColor[] = []
 
+// Virtual path for a tag view (Finder-style: shows every tagged file machine-wide).
+export const TAG_PATH_PREFIX = '__nova:tag:'
+export function tagPath(color: TagColor) { return `${TAG_PATH_PREFIX}${color}__` }
+export function parseTagColor(p: string): TagColor | null {
+  if (!p.startsWith(TAG_PATH_PREFIX) || !p.endsWith('__')) return null
+  const c = p.slice(TAG_PATH_PREFIX.length, -2)
+  return (['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'gray'] as TagColor[]).includes(c as TagColor)
+    ? (c as TagColor)
+    : null
+}
+
 export const TAG_COLORS: { name: TagColor; hex: string; label: string }[] = [
   { name: 'red',    hex: '#FF5E58', label: 'Red' },
   { name: 'orange', hex: '#FFA04D', label: 'Orange' },

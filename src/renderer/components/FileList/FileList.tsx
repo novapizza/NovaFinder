@@ -11,7 +11,7 @@ import { sortEntries } from '../../lib/sort'
 import { useFileMenu } from '../../hooks/useFileMenu'
 import { useHistoryStore } from '../../store/historyStore'
 import { useSearchStore } from '../../store/searchStore'
-import { useTagStore, type TagColor, EMPTY_TAGS } from '../../store/tagStore'
+import { useTagStore, type TagColor, EMPTY_TAGS, parseTagColor } from '../../store/tagStore'
 import { useRecentsStore, RECENTS_PATH } from '../../store/recentsStore'
 import { useRecentFoldersStore } from '../../store/recentFoldersStore'
 import { useGitStatus } from '../../hooks/useGitStatus'
@@ -37,7 +37,9 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   const smartId = parseSmartFolderId(pane.path)
   const smartFolder = useSmartFoldersStore((s) => smartId ? s.folders.find((f) => f.id === smartId) : undefined)
   const isSmartMode = !!smartFolder
-  const isVirtualMode = isRecentsMode || isSmartMode
+  const tagColor = parseTagColor(pane.path)
+  const isTagMode = !!tagColor
+  const isVirtualMode = isRecentsMode || isSmartMode || isTagMode
   const { entries: dirEntries, loading, error, reload } = useDirectory(isVirtualMode ? '' : pane.path, showHidden)
   const [smartResults, setSmartResults] = useState<typeof dirEntries>([])
   const [smartLoading, setSmartLoading] = useState(false)
@@ -51,10 +53,33 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
       .finally(() => { if (!cancelled) setSmartLoading(false) })
     return () => { cancelled = true }
   }, [smartFolder?.id, smartFolder?.scope, smartFolder?.mode, smartFolder?.query])
+
+  // Tag virtual mode: collect every path in tagStore.map tagged with this color,
+  // stat them in batch, and present like a directory listing (Finder-style).
+  const tagMapForList = useTagStore((s) => s.map)
+  const [tagResults, setTagResults] = useState<typeof dirEntries>([])
+  const [tagLoading, setTagLoading] = useState(false)
+  useEffect(() => {
+    if (!tagColor) { setTagResults([]); return }
+    const paths = Object.entries(tagMapForList)
+      .filter(([, colors]) => colors.includes(tagColor))
+      .map(([p]) => p)
+    if (paths.length === 0) { setTagResults([]); return }
+    setTagLoading(true)
+    let cancelled = false
+    window.fs.statBatch(paths)
+      .then((r) => { if (!cancelled) setTagResults(r as typeof dirEntries) })
+      .catch(() => { if (!cancelled) setTagResults([]) })
+      .finally(() => { if (!cancelled) setTagLoading(false) })
+    return () => { cancelled = true }
+  }, [tagColor, tagMapForList])
+
   const entries = isRecentsMode
     ? recentEntries.map((r) => ({ name: r.name, path: r.path, isDirectory: false, size: 0, modified: r.openedAt, ext: r.ext }))
     : isSmartMode
     ? smartResults
+    : isTagMode
+    ? tagResults
     : dirEntries
   const { rename, paste, newFolder, newFile } = useFileOps(reload)
   const [renamingPath, setRenamingPath] = useState<string | null>(null)
@@ -308,7 +333,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
         className="flex-1 overflow-y-auto scrollbar-thin"
         onClick={(e) => { if (e.target === e.currentTarget) clearSelection() }}
       >
-        {(loading || smartLoading) && !isSearching && sorted.length === 0 && !pendingNew && <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">Loading…</div>}
+        {(loading || smartLoading || tagLoading) && !isSearching && sorted.length === 0 && !pendingNew && <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">Loading…</div>}
         {isSearching && searching && <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">Searching…</div>}
         {error && !isSearching && <PermissionError error={error} path={pane.path} onRetry={() => reload()} />}
         {!loading && !error && !searching && sorted.length === 0 && !pendingNew && (

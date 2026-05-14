@@ -65,6 +65,28 @@ export function registerFsHandlers() {
     }
   })
 
+  ipcMain.handle('fs:statBatch', async (_e, paths: string[]): Promise<FileEntry[]> => {
+    const results = await Promise.all(
+      paths.map(async (p): Promise<FileEntry | null> => {
+        try {
+          const stat = await fs.stat(p)
+          const name = path.basename(p)
+          return {
+            name,
+            path: p,
+            isDirectory: stat.isDirectory(),
+            size: stat.size,
+            modified: stat.mtimeMs,
+            ext: stat.isDirectory() ? '' : (path.extname(name).slice(1).toLowerCase() ?? ''),
+          }
+        } catch {
+          return null
+        }
+      })
+    )
+    return results.filter((e): e is FileEntry => e !== null)
+  })
+
   ipcMain.handle('fs:readTextFile', async (_e, filePath: string) => {
     const stat = await fs.stat(filePath)
     if (stat.size > 2 * 1024 * 1024) return null // skip files > 2MB

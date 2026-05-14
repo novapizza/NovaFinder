@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { usePaneStore, type ViewMode } from '../store/paneStore'
 import { RECENTS_PATH } from '../store/recentsStore'
 import { parseSmartFolderId, useSmartFoldersStore } from '../store/smartFoldersStore'
+import { parseTagColor, TAG_COLORS } from '../store/tagStore'
 import { SearchBar } from './SearchBar'
 import { SortMenu } from './SortMenu'
 import { Tooltip } from './Tooltip'
@@ -28,7 +29,9 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
   const isRecentsMode = pane.path === RECENTS_PATH
   const smartFolderId = parseSmartFolderId(pane.path)
   const smartFolder = useSmartFoldersStore((s) => smartFolderId ? s.folders.find((f) => f.id === smartFolderId) : undefined)
-  const isVirtualMode = isRecentsMode || !!smartFolder
+  const tagColor = parseTagColor(pane.path)
+  const tagMeta = tagColor ? TAG_COLORS.find((t) => t.name === tagColor) : null
+  const isVirtualMode = isRecentsMode || !!smartFolder || !!tagColor
   const [trashPath, setTrashPath] = useState<string>('')
   useEffect(() => { window.fs.trashPath().then(setTrashPath) }, [])
   const isTrash = !!trashPath && pane.path === trashPath
@@ -72,6 +75,12 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
         {isRecentsMode ? (
           <div className="w-full flex items-center px-3 py-1.5 rounded-lg min-h-[34px] border border-border/40 bg-surface-2/60">
             <span className="text-foreground font-medium text-[13px]">Recents</span>
+          </div>
+        ) : tagMeta ? (
+          <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg min-h-[34px] border border-border/40 bg-surface-2/60">
+            <span className="h-[14px] w-[14px] rounded-full" style={{ backgroundColor: tagMeta.hex, boxShadow: 'inset 0 0 0 0.5px hsl(0 0% 0% / 0.25)' }} />
+            <span className="text-foreground font-medium text-[13px]">{tagMeta.label}</span>
+            <span className="text-muted-foreground text-[11px] truncate">— all items tagged {tagMeta.label}</span>
           </div>
         ) : smartFolder ? (
           <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg min-h-[34px] border border-border/40 bg-surface-2/60">

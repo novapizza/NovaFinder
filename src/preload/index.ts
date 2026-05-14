@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('fs', {
   readdir: (p: string, showHidden?: boolean) => ipcRenderer.invoke('fs:readdir', p, showHidden),
   readdirsOnly: (p: string) => ipcRenderer.invoke('fs:readdirsOnly', p),
   stat: (p: string) => ipcRenderer.invoke('fs:stat', p),
+  statBatch: (paths: string[]) => ipcRenderer.invoke('fs:statBatch', paths),
   readTextFile: (p: string) => ipcRenderer.invoke('fs:readTextFile', p),
   readBinaryFile: (p: string) => ipcRenderer.invoke('fs:readBinaryFile', p),
   rename: (src: string, dest: string) => ipcRenderer.invoke('fs:rename', src, dest),
@@ -68,6 +69,7 @@ declare global {
       readdir(p: string, showHidden?: boolean): Promise<FileEntry[]>
       readdirsOnly(p: string): Promise<FileEntry[]>
       stat(p: string): Promise<{ size: number; modified: number; created: number; isDirectory: boolean }>
+      statBatch(paths: string[]): Promise<FileEntry[]>
       readTextFile(p: string): Promise<string | null>
       readBinaryFile(p: string): Promise<ArrayBuffer | null>
       rename(src: string, dest: string): Promise<void>
