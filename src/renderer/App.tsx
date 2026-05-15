@@ -14,6 +14,9 @@ import { usePaneStore } from './store/paneStore'
 import { useFileOps } from './hooks/useFileOps'
 import { PromptModal } from './components/PromptModal'
 import { useSearchStore } from './store/searchStore'
+import { RECENTS_PATH } from './store/recentsStore'
+import { SMART_PATH_PREFIX } from './store/smartFoldersStore'
+import { TAG_PATH_PREFIX } from './store/tagStore'
 
 export default function App() {
   const [showPreview, setShowPreview] = useState(true)
@@ -40,6 +43,10 @@ export default function App() {
 
   async function handleSelectAll() {
     const pane = panes[activePaneId]
+    // Virtual views (Recents, Smart Folders, Tag) don't have a real directory
+    // to readdir — skip rather than throw ENOENT. Select-all from the
+    // visible list could be wired through FileList in a follow-up.
+    if (pane.path === RECENTS_PATH || pane.path.startsWith(SMART_PATH_PREFIX) || pane.path.startsWith(TAG_PATH_PREFIX)) return
     const entries = await window.fs.readdir(pane.path, showHidden)
     setSelection(activePaneId, entries.map((e) => e.path))
   }

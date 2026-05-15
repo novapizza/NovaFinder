@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react'
 import { usePaneStore } from '../store/paneStore'
 import { formatSize } from '../lib/formatters'
+import { RECENTS_PATH } from '../store/recentsStore'
+import { SMART_PATH_PREFIX } from '../store/smartFoldersStore'
+import { TAG_PATH_PREFIX } from '../store/tagStore'
+
+function isVirtualPath(p: string) {
+  return p === RECENTS_PATH || p.startsWith(SMART_PATH_PREFIX) || p.startsWith(TAG_PATH_PREFIX)
+}
 
 export function StatusBar() {
   const { activePaneId, panes, showHidden } = usePaneStore()
@@ -9,6 +16,7 @@ export function StatusBar() {
   const [selectedSize, setSelectedSize] = useState(0)
 
   useEffect(() => {
+    if (isVirtualPath(pane.path)) { setTotalCount(0); return }
     window.fs.readdir(pane.path, showHidden).then((entries) => {
       setTotalCount(entries.length)
     }).catch(() => setTotalCount(0))
