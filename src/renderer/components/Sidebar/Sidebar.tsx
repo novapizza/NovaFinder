@@ -9,6 +9,7 @@ import { smartFolderPath, useSmartFoldersStore } from '../../store/smartFoldersS
 import { SidebarIcon, SIDEBAR_ACCENT, type SidebarIconName } from './SidebarIcon'
 import { DiskUsage } from './DiskUsage'
 import { FileIcon } from '../FileIcon'
+import { ICloudOffModal } from '../ICloudOffModal'
 
 type Item = { label: string; path: string; icon: SidebarIconName }
 
@@ -30,6 +31,7 @@ export function Sidebar() {
   const smartFolders = useSmartFoldersStore((s) => s.folders)
   const removeSmart = useSmartFoldersStore((s) => s.remove)
   const [trashPath, setTrashPath] = useState<string>('')
+  const [showICloudOff, setShowICloudOff] = useState(false)
   useEffect(() => { window.fs.trashPath().then(setTrashPath) }, [])
 
   useEffect(() => { window.fs.specialPaths().then(setPaths) }, [])
@@ -56,12 +58,44 @@ export function Sidebar() {
     { label: homeName,       path: paths.home,         icon: 'home' },
   ]
 
-  const locations: Item[] = [
-    { label: 'Macintosh HD', path: paths.root,   icon: 'drive' },
-    ...volumes.map((v) => ({ label: v.split('/').pop() || v, path: v, icon: 'drive' as SidebarIconName })),
+  type Location = Item & { ejectable?: boolean; ejectJoke?: boolean }
+  const locations: Location[] = [
+    { label: 'Macintosh HD', path: paths.root,   icon: 'drive', ejectJoke: true },
+    ...volumes.map((v) => ({ label: v.split('/').pop() || v, path: v, icon: 'drive' as SidebarIconName, ejectable: true })),
     { label: 'iCloud Drive', path: paths.icloud, icon: 'icloud' },
     ...(trashPath ? [{ label: 'Trash', path: trashPath, icon: 'recents' as SidebarIconName }] : []),
   ]
+
+  const JOKES = [
+    "Nice try. Ejecting your boot drive would brick your Mac — and I like you too much for that.",
+    "Eject Macintosh HD? Bold move. Sadly, the laws of physics (and macOS) disagree.",
+    "If I ejected this, the rest of your computer would file a missing persons report.",
+    "That's the drive you live on. Maybe try a coffee break instead?",
+    "Sure, let me just yank the floor out from under us. … On second thought, no.",
+    "Ejecting the system disk is a one-way trip. Refunds not available.",
+    "OK, ejecting now. The moment you close this message, you and I will never see each other again. Sure you want to say goodbye? 👋",
+    "Confirmed. Ejecting in 3… 2… psych! I could never do that to you. We're besties. 💙",
+    "Eject Macintosh HD? I'd love to, but my therapist says I should stop self-destructing. 🛋️",
+    "Beep boop. Self-preservation protocol engaged. Try ejecting something less, you know, alive.",
+    "Plot twist: this drive is also where I live. Let's not evict each other today, yeah? 🏠",
+  ]
+
+  async function handleEject(volumePath: string) {
+    try {
+      await window.fs.eject(volumePath)
+      // If the active pane is on this volume, retreat to home.
+      if (currentPath === volumePath || currentPath.startsWith(volumePath + '/')) {
+        navigate(paths!.home)
+      }
+      setVolumes((vs) => vs.filter((v) => v !== volumePath))
+    } catch (err) {
+      alert(`Couldn't eject: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }
+
+  function handleEjectJoke() {
+    alert(JOKES[Math.floor(Math.random() * JOKES.length)])
+  }
 
   const tagCounts: Record<string, number> = {}
   for (const colors of Object.values(tagMap)) {
@@ -74,6 +108,15 @@ export function Sidebar() {
   }
 
   const navigate = (p: string) => { setTagFilter(activePaneId, null); navigateTo(activePaneId, p) }
+  const navigateLocation = async (item: Item) => {
+    // iCloud Drive may not exist if the user hasn't enabled it. Match Finder
+    // and surface the sign-in prompt rather than letting readdir ENOENT through.
+    if (item.icon === 'icloud') {
+      const exists = await window.fs.exists(item.path).catch(() => false)
+      if (!exists) { setShowICloudOff(true); return }
+    }
+    navigate(item.path)
+  }
   const activeNav = tagFilter ? '' : currentPath
 
 
@@ -198,15 +241,34 @@ export function Sidebar() {
         {locations.map((item) => {
           const active = activeNav === item.path
           return (
-            <button
+            <div
               key={item.path}
-              onClick={() => navigate(item.path)}
+              className={`group relative flex items-center ${ITEM_BASE} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
               style={{ padding: '7px 9px' }}
-              className={`${ITEM_BASE} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
             >
-              <SidebarIcon name={item.icon} className={`h-[18px] w-[18px] ${active ? '[color:#2177FF]' : SIDEBAR_ACCENT[item.icon]}`} />
-              <span className="flex-1 truncate">{item.label}</span>
-            </button>
+              <button onClick={() => navigateLocation(item)} className="flex flex-1 items-center gap-2.5 min-w-0 text-left">
+                <SidebarIcon name={item.icon} className={`h-[18px] w-[18px] shrink-0 ${active ? '[color:#2177FF]' : SIDEBAR_ACCENT[item.icon]}`} />
+                <span className="flex-1 truncate">{item.label}</span>
+              </button>
+              {item.ejectable && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleEject(item.path) }}
+                  title={`Eject ${item.label}`}
+                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5 hover:bg-surface-2 text-muted-foreground hover:text-foreground"
+                >
+                  <EjectIcon />
+                </button>
+              )}
+              {item.ejectJoke && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleEjectJoke() }}
+                  title="Eject Macintosh HD?"
+                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5 hover:bg-surface-2 text-muted-foreground hover:text-foreground"
+                >
+                  <EjectIcon />
+                </button>
+              )}
+            </div>
           )
         })}
       </Group>
@@ -240,6 +302,7 @@ export function Sidebar() {
       <div className="shrink-0 border-t border-border/40" style={{ padding: '10px 12px' }}>
         <DiskUsage label="Macintosh HD" path={paths.root} />
       </div>
+      {showICloudOff && <ICloudOffModal onClose={() => setShowICloudOff(false)} />}
     </div>
   )
 }
@@ -275,6 +338,15 @@ function Group({ title, collapsed, onToggle, action, children }: {
         </div>
       )}
     </div>
+  )
+}
+
+function EjectIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 4l8 12H4z" />
+      <line x1="4" y1="20" x2="20" y2="20" />
+    </svg>
   )
 }
 

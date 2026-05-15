@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('fs', {
   delete: (p: string) => ipcRenderer.invoke('fs:delete', p),
   move: (src: string, dest: string) => ipcRenderer.invoke('fs:move', src, dest),
   trashPath: () => ipcRenderer.invoke('fs:trashPath'),
+  eject: (volumePath: string) => ipcRenderer.invoke('fs:eject', volumePath),
   emptyTrash: () => ipcRenderer.invoke('fs:emptyTrash'),
   mkdir: (p: string) => ipcRenderer.invoke('fs:mkdir', p),
   open: (p: string) => ipcRenderer.invoke('fs:open', p),
@@ -37,6 +38,7 @@ contextBridge.exposeInMainWorld('fs', {
   exists: (p: string) => ipcRenderer.invoke('fs:exists', p),
   showItemInFolder: (p: string) => ipcRenderer.invoke('fs:showItemInFolder', p),
   openPrivacySettings: () => ipcRenderer.invoke('shell:openPrivacySettings'),
+  openAppleIdSettings: () => ipcRenderer.invoke('shell:openAppleIdSettings'),
   writeClipboardText: (text: string) => ipcRenderer.invoke('clipboard:writeText', text),
   writeFile: (p: string, content?: string) => ipcRenderer.invoke('fs:writeFile', p, content),
   searchRecursive: (dir: string, query: string, mode: 'name' | 'content' | 'kind' | 'size') =>
@@ -77,6 +79,7 @@ declare global {
       delete(p: string): Promise<void>
       move(src: string, dest: string): Promise<void>
       trashPath(): Promise<string>
+      eject(volumePath: string): Promise<void>
       emptyTrash(): Promise<void>
       mkdir(p: string): Promise<void>
       open(p: string): Promise<void>
@@ -86,6 +89,7 @@ declare global {
       exists(p: string): Promise<boolean>
       showItemInFolder(p: string): Promise<void>
       openPrivacySettings(): Promise<void>
+      openAppleIdSettings(): Promise<void>
       writeClipboardText(text: string): Promise<void>
       writeFile(p: string, content?: string): Promise<void>
       searchRecursive(dir: string, query: string, mode: 'name' | 'content' | 'kind' | 'size'): Promise<FileEntry[]>

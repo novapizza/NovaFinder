@@ -134,6 +134,20 @@ export function registerFsHandlers() {
 
   ipcMain.handle('fs:trashPath', () => path.join(os.homedir(), '.Trash'))
 
+  // Eject a mounted volume on macOS via `diskutil eject`. Resolves only on
+  // success; rejects with stderr text so the renderer can surface it.
+  ipcMain.handle('fs:eject', async (_e, volumePath: string) => {
+    if (!volumePath.startsWith('/Volumes/')) {
+      throw new Error('Only paths under /Volumes can be ejected')
+    }
+    await new Promise<void>((resolve, reject) => {
+      execFile('/usr/sbin/diskutil', ['eject', volumePath], (err, _stdout, stderr) => {
+        if (err) reject(new Error((stderr || err.message).trim()))
+        else resolve()
+      })
+    })
+  })
+
   ipcMain.handle('fs:emptyTrash', async () => {
     await new Promise<void>((resolve, reject) => {
       execFile('osascript', ['-e', 'tell application "Finder" to empty trash'], (err) => {
@@ -184,6 +198,12 @@ export function registerFsHandlers() {
 
   ipcMain.handle('shell:openPrivacySettings', () => {
     shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles')
+  })
+
+  ipcMain.handle('shell:openAppleIdSettings', () => {
+    // macOS Ventura+ uses the new AppleID pane; the legacy URL still resolves
+    // on older systems. shell.openExternal is best-effort either way.
+    shell.openExternal('x-apple.systempreferences:com.apple.systempreferences.AppleIDSettings')
   })
 
   ipcMain.handle('clipboard:writeText', (_e, text: string) => {
