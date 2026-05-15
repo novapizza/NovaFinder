@@ -11,9 +11,11 @@ const OPTIONS: { key: SortKey; label: string }[] = [
 
 export function SortMenu() {
   const [open, setOpen] = useState(false)
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 })
   const { activePaneId, panes, setSort } = usePaneStore()
   const pane = panes[activePaneId]
   const ref = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
@@ -22,6 +24,14 @@ export function SortMenu() {
     window.addEventListener('mousedown', h)
     return () => window.removeEventListener('mousedown', h)
   }, [])
+
+  function handleOpen() {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+    }
+    setOpen((v) => !v)
+  }
 
   function choose(key: SortKey) {
     setSort(activePaneId, key)
@@ -32,8 +42,9 @@ export function SortMenu() {
     <div ref={ref} className="relative [-webkit-app-region:no-drag]">
       <Tooltip label="Sort">
         <button
-          onClick={() => setOpen((v) => !v)}
-          className="w-[48px] h-[48px] flex items-center justify-center rounded-md text-[var(--text-soft)] hover:bg-[var(--hover)] transition-colors"
+          ref={btnRef}
+          onClick={handleOpen}
+          className="w-[32px] h-[32px] flex items-center justify-center rounded-md text-[var(--text-soft)] hover:bg-[var(--hover)] transition-colors"
           aria-label="Sort"
         >
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -45,8 +56,8 @@ export function SortMenu() {
       </Tooltip>
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 nd-context-menu rounded-[10px] text-[13px] min-w-[240px] shadow-[0_14px_48px_rgba(0,0,0,0.35),0_2px_8px_rgba(0,0,0,0.2)] z-[9999]"
-          style={{ padding: '6px 4px' }}
+          className="fixed nd-context-menu rounded-[10px] text-[13px] min-w-[200px] z-[99999]"
+          style={{ padding: '6px 4px', top: menuPos.top, right: menuPos.right }}
         >
           <div className="px-3 pb-[3px] pt-[2px] text-[11px] font-semibold text-muted-foreground">Sort By</div>
           {OPTIONS.map((opt) => {

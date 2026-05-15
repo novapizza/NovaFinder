@@ -71,7 +71,7 @@ export default function App() {
   return (
     <div className="flex h-screen w-screen items-center justify-center overflow-hidden p-[2px] bg-background text-foreground">
 
-      <div className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-background shadow-window">
+      <div className="relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border/60 bg-background shadow-window">
 
         <PanelGroup direction="horizontal" className="flex-1 overflow-hidden min-h-0">
           {/* Sidebar — full height, top drag region covers traffic lights */}
@@ -81,10 +81,10 @@ export default function App() {
               <Sidebar />
             </div>
           </Panel>
-          <PanelResizeHandle className="w-px bg-border/40 hover:bg-primary/60 transition-colors" />
+          <PanelResizeHandle className="w-px hover:bg-primary/60 transition-colors" />
 
           {/* Main content column: toolbar + file list + preview */}
-          <Panel defaultSize={82} minSize={40} className="flex flex-col overflow-hidden">
+          <Panel defaultSize={82} minSize={40} className="content-area flex flex-col overflow-hidden">
             <Toolbar
               showPreview={showPreview}
               onTogglePreview={() => setShowPreview((v) => !v)}
@@ -112,7 +112,7 @@ export default function App() {
 
               {showPreview && (
                 <>
-                  <PanelResizeHandle className="w-px bg-border/40 hover:bg-primary/60 transition-colors" />
+                  <PanelResizeHandle className="w-px hover:bg-primary/60 transition-colors" />
                   <Panel defaultSize={40} minSize={20} maxSize={60} className="bg-sidebar/80 border-l border-border/40">
                     <PreviewPanel
                       filePath={previewFile?.path ?? null}

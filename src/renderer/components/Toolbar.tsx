@@ -45,7 +45,7 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
   }
 
   return (
-    <div className="glass-strong flex items-center gap-1.5 pl-3 pr-3 border-b border-border/60 flex-shrink-0 min-h-[52px] [-webkit-app-region:drag]">
+    <div className="font-sf-display glass-strong flex items-center gap-1.5 pl-3 pr-3 border-b border-border/60 flex-shrink-0 min-h-[52px] [-webkit-app-region:drag]">
 
       {/* Nav arrows */}
       <div className="flex items-center gap-0.5 [-webkit-app-region:no-drag]">
@@ -61,7 +61,7 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
       </div>
 
       {/* View mode segmented control */}
-      <div className="flex items-center rounded-lg bg-surface-2 p-0.5 ml-1 [-webkit-app-region:no-drag]">
+      <div className="flex items-center rounded-md bg-surface-2 p-0.5 ml-1 [-webkit-app-region:no-drag]">
         <ViewBtn mode="icon" current={viewMode} onSelect={setViewMode} title="As Icons (⌘1)"><GridIcon /></ViewBtn>
         <ViewBtn mode="list" current={viewMode} onSelect={setViewMode} title="As List (⌘2)"><ListIcon /></ViewBtn>
         <ViewBtn mode="column" current={viewMode} onSelect={setViewMode} title="As Columns (⌘3)"><ColumnsIcon /></ViewBtn>
@@ -73,7 +73,7 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
       {/* Path breadcrumb / edit */}
       <div className="ml-2 flex-1 min-w-0 [-webkit-app-region:no-drag]">
         {isRecentsMode ? (
-          <div className="w-full flex items-center px-3 py-1.5 rounded-lg min-h-[34px] border border-border/40 bg-surface-2/60">
+          <div className="w-full flex items-center px-3 py-1.5 rounded-md min-h-[34px] border border-border/40 bg-surface-2/60">
             <span className="text-foreground font-medium text-[13px]">Recents</span>
           </div>
         ) : tagMeta ? (
@@ -83,8 +83,8 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
             <span className="text-muted-foreground text-[11px] truncate">— all items tagged {tagMeta.label}</span>
           </div>
         ) : smartFolder ? (
-          <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg min-h-[34px] border border-border/40 bg-surface-2/60">
-            <svg className="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md min-h-[34px] border border-border/40 bg-surface-2/60">
+            <svg className="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
             <span className="text-foreground font-medium text-[13px] truncate">{smartFolder.name}</span>
             <span className="text-muted-foreground text-[11px] truncate">— {smartFolder.mode}: "{smartFolder.query}"</span>
           </div>
@@ -98,13 +98,13 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
               if (e.key === 'Enter') commitPath()
               if (e.key === 'Escape') setEditing(false)
             }}
-            className="w-full bg-surface-1 text-foreground text-[13px] px-3 py-1.5 rounded-lg outline-none border border-primary/60 font-mono"
+            className="w-full bg-surface-1 text-foreground text-[13px] px-3 py-1.5 rounded-md outline-none border border-primary/60 font-mono"
           />
         ) : (
           <button
             onClick={startEdit}
             title={pane.path}
-            className="w-full flex items-center gap-1 text-left bg-surface-2/60 hover:bg-surface-2 px-3 py-1.5 rounded-lg transition-colors min-h-[34px] border border-border/40 overflow-hidden"
+            className="w-full flex items-center gap-1 text-left bg-surface-2/60 hover:bg-surface-2 px-3 py-1.5 rounded-md transition-colors min-h-[34px] border border-border/40 overflow-hidden"
           >
             {segments.length === 1 && segments[0] === '' ? (
               <span className="text-foreground text-[13px]">/</span>
@@ -223,7 +223,7 @@ function ViewBtn({ children, mode, current, onSelect, title }: {
         className={[
           'px-2.5 py-1.5 rounded-md transition-all',
           active
-            ? 'bg-gradient-to-r from-primary to-[hsl(232_90%_65%)] text-white shadow-sm'
+            ? 'bg-primary/15 text-primary'
             : 'text-muted-foreground hover:text-foreground',
         ].join(' ')}
       >
@@ -234,19 +234,19 @@ function ViewBtn({ children, mode, current, onSelect, title }: {
 }
 
 /* ── SVG Icons ── */
-function ChevronLeftIcon()  { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg> }
-function ChevronRightIcon() { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg> }
-function UpIcon()           { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg> }
-function RefreshIcon()      { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><path d="M21 3v5h-5"/></svg> }
-function FolderPlusIcon()   { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" x2="12" y1="11" y2="17"/><line x1="9" x2="15" y1="14" y2="14"/></svg> }
-function FilePlusIcon()     { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" x2="12" y1="13" y2="19"/><line x1="9" x2="15" y1="16" y2="16"/></svg> }
-function GridIcon()         { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> }
-function ListIcon()         { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg> }
-function ColumnsIcon()      { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" x2="9" y1="3" y2="21"/><line x1="15" x2="15" y1="3" y2="21"/></svg> }
-function GalleryIcon()      { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="12" height="12" rx="2"/><rect x="2" y="18" width="4" height="3" rx="0.5"/><rect x="9" y="18" width="6" height="3" rx="0.5"/><rect x="18" y="18" width="4" height="3" rx="0.5"/></svg> }
+function ChevronLeftIcon()  { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg> }
+function ChevronRightIcon() { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg> }
+function UpIcon()           { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg> }
+function RefreshIcon()      { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><path d="M21 3v5h-5"/></svg> }
+function FolderPlusIcon()   { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" x2="12" y1="11" y2="17"/><line x1="9" x2="15" y1="14" y2="14"/></svg> }
+function FilePlusIcon()     { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" x2="12" y1="13" y2="19"/><line x1="9" x2="15" y1="16" y2="16"/></svg> }
+function GridIcon()         { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> }
+function ListIcon()         { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg> }
+function ColumnsIcon()      { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" x2="9" y1="3" y2="21"/><line x1="15" x2="15" y1="3" y2="21"/></svg> }
+function GalleryIcon()      { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="12" height="12" rx="2"/><rect x="2" y="18" width="4" height="3" rx="0.5"/><rect x="9" y="18" width="6" height="3" rx="0.5"/><rect x="18" y="18" width="4" height="3" rx="0.5"/></svg> }
 function DotIcon()          { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg> }
-function PreviewIcon()      { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" x2="15" y1="3" y2="21"/></svg> }
-function ChevronSmallIcon() { return <svg className="h-3 w-3 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg> }
-function SunIcon()          { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg> }
-function MoonIcon()         { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg> }
-function SyncIcon()         { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg> }
+function PreviewIcon()      { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" x2="15" y1="3" y2="21"/></svg> }
+function ChevronSmallIcon() { return <svg className="h-3 w-3 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg> }
+function SunIcon()          { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg> }
+function MoonIcon()         { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg> }
+function SyncIcon()         { return <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg> }

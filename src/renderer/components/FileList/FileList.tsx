@@ -492,7 +492,7 @@ function PermissionError({ error, path, onRetry }: { error: string; path: string
       <div className="flex gap-2">
         <button
           onClick={() => window.fs.openPrivacySettings()}
-          className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-primary to-[hsl(232_90%_65%)] text-white text-[13px] hover:brightness-110 transition shadow-sm"
+          className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-primary/70 to-primary/40 text-white text-[13px] hover:brightness-110 transition shadow-sm"
         >
           Open Privacy Settings
         </button>

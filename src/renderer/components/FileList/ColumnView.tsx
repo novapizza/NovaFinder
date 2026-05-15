@@ -182,7 +182,7 @@ function ColumnRow({
       className={[
         'flex items-center gap-3 px-3 py-[6px] cursor-default select-none text-[13px] mx-1 rounded-md',
         selected
-          ? 'bg-gradient-to-r from-primary to-[hsl(232_90%_65%)] text-white'
+          ? 'bg-gradient-to-r from-primary/70 to-primary/40 text-white'
           : 'text-foreground hover:bg-surface-2',
       ].join(' ')}
     >

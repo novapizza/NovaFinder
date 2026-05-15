@@ -71,9 +71,9 @@ function PendingTile({ type, onCommit, onCancel }: { type: 'folder' | 'file'; on
   return (
     <div className="flex flex-col items-center gap-2 rounded-xl p-3 bg-primary/15 ring-1 ring-primary/40 select-none">
       <div className={[
-        'flex h-16 w-16 items-center justify-center rounded-2xl',
+        'flex h-16 w-16 items-center justify-center rounded-md',
         type === 'folder'
-          ? 'bg-gradient-to-br from-primary/80 to-primary/40 shadow-elevated'
+          ? 'bg-gradient-to-br from-primary/50 to-primary/25 shadow-elevated'
           : 'bg-surface-2 ring-1 ring-border/60',
       ].join(' ')}>
         <FileIcon ext={type === 'file' ? 'txt' : ''} isDirectory={type === 'folder'} size={type === 'folder' ? 38 : 34} />
@@ -163,16 +163,16 @@ function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, 
     >
       <div
         className={[
-          'flex h-16 w-16 items-center justify-center rounded-2xl transition-transform group-hover:-translate-y-0.5',
+          'flex h-16 w-16 items-center justify-center rounded-md transition-transform group-hover:-translate-y-0.5',
           entry.isDirectory
-            ? 'bg-gradient-to-br from-primary/80 to-primary/40 shadow-elevated'
-            : 'bg-surface-2 ring-1 ring-border/60',
+            ? 'folder-icon-bg [background:hsl(74deg_4%_22%_/_51%)]'
+            : thumb ? '' : 'bg-surface-2 ring-1 ring-border/60',
         ].join(' ')}
       >
         {thumb ? (
           <img
             src={thumb}
-            className="max-w-full max-h-full object-contain rounded-xl"
+            className="max-w-full max-h-full object-contain rounded-md"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         ) : (
@@ -195,7 +195,7 @@ function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, 
         />
       ) : (
         <span className="flex flex-col items-center gap-0.5 max-w-full">
-          <span className="line-clamp-2 text-center text-[11px] leading-tight text-foreground break-all">
+          <span className="line-clamp-2 text-center text-[12px] font-medium leading-[1.25] text-foreground/80 break-all">
             {entry.name}
           </span>
           <span className="flex items-center gap-1">
