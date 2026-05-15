@@ -35,18 +35,18 @@ export function GalleryView({ entries, selection, onSelect, onOpen, onContextMen
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Hero preview */}
-      <div className="flex-1 min-h-0 flex items-center justify-center bg-surface-1/40 px-8 py-6 overflow-hidden">
+      <div className={`flex-1 min-h-0 flex items-center justify-center px-8 py-6 overflow-hidden ${isImage ? '' : 'bg-surface-1/40'}`}>
         {isImage ? (
           <img
             src={novaFileUrl(current.path)}
-            className="max-w-full max-h-full object-contain rounded-xl shadow-elevated"
+            className="max-w-full max-h-full object-contain rounded-md shadow-elevated"
           />
         ) : (
           <div className="flex flex-col items-center gap-3">
             <div className={[
-              'flex h-40 w-40 items-center justify-center rounded-3xl',
+              'flex h-40 w-40 items-center justify-center rounded-md',
               current.isDirectory
-                ? 'bg-gradient-to-br from-primary/80 to-primary/40 shadow-elevated'
+                ? 'folder-icon-bg [background:hsl(74deg_4%_22%_/_51%)]'
                 : 'bg-surface-2 ring-1 ring-border/60',
             ].join(' ')}>
               <FileIcon ext={current.ext} isDirectory={current.isDirectory} size={96} />
@@ -82,16 +82,16 @@ export function GalleryView({ entries, selection, onSelect, onOpen, onContextMen
               onDoubleClick={() => onOpen(entry)}
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onContextMenu(e, entry.path) }}
               className={[
-                'flex-shrink-0 flex flex-col items-center gap-1 rounded-lg p-1.5 transition-all',
+                'flex-shrink-0 flex flex-col items-center gap-1 rounded-md p-1.5 transition-all',
                 selected ? 'bg-primary/15 ring-1 ring-primary/40' : 'hover:bg-surface-2',
               ].join(' ')}
               style={{ width: 84 }}
             >
               <div className={[
-                'flex h-14 w-14 items-center justify-center rounded-lg overflow-hidden',
+                'flex h-14 w-14 items-center justify-center rounded-md overflow-hidden',
                 entry.isDirectory
-                  ? 'bg-gradient-to-br from-primary/80 to-primary/40'
-                  : 'bg-surface-2 ring-1 ring-border/60',
+                  ? 'folder-icon-bg [background:hsl(74deg_4%_22%_/_51%)]'
+                  : thumb ? '' : 'bg-surface-2 ring-1 ring-border/60',
               ].join(' ')}>
                 {thumb ? (
                   <img src={thumb} className="max-w-full max-h-full object-contain" />

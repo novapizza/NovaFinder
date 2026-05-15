@@ -9,147 +9,177 @@
 @layer base {
   :root,
   .dark {
-    --background: 220 18% 10%;
-    --foreground: 210 20% 96%;
+    /* ── Monokai-tone Dark ── #272823 base */
+    --background: 100 4% 12%;
+    --foreground: 0 0% 87%;
 
-    --surface-1: 220 16% 13%;
-    --surface-2: 220 14% 17%;
-    --surface-3: 220 12% 22%;
+    --surface-1: 74 4% 15%;
+    --surface-2: 74 4% 18%;
+    --surface-3: 74 4% 22%;
 
-    --card: 220 16% 13%;
-    --card-foreground: 210 20% 96%;
+    --card: 74 4% 15%;
+    --card-foreground: 0 0% 87%;
 
-    --popover: 220 16% 14%;
-    --popover-foreground: 210 20% 96%;
+    --popover: 74 4% 15%;
+    --popover-foreground: 0 0% 87%;
 
-    --primary: 211 100% 60%;
+    --primary: 218 100% 61%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 211 100% 70%;
+    --primary-glow: 218 100% 73%;
 
-    --secondary: 220 12% 22%;
-    --secondary-foreground: 210 20% 96%;
+    --secondary: 74 4% 20%;
+    --secondary-foreground: 0 0% 87%;
 
-    --muted: 220 12% 18%;
-    --muted-foreground: 215 12% 62%;
+    --muted: 74 4% 17%;
+    --muted-foreground: 216 14% 68%;
 
-    --accent: 280 80% 65%;
+    --accent: 218 100% 61%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 58%;
+    --destructive: 3 92% 63%;
     --destructive-foreground: 0 0% 100%;
-    --success: 142 70% 48%;
-    --warning: 38 92% 56%;
+    --success: 134 48% 56%;
+    --warning: 42 72% 48%;
 
-    --border: 220 12% 22%;
-    --input: 220 12% 18%;
-    --ring: 211 100% 60%;
+    --border: 74 4% 20%;
+    --input: 74 4% 18%;
+    --ring: 218 100% 61%;
 
-    --radius: 0.625rem;
+    --radius: 0.375rem;
 
-    --traffic-red: 0 78% 62%;
-    --traffic-yellow: 42 95% 58%;
-    --traffic-green: 134 60% 52%;
+    --traffic-red: 3 88% 62%;
+    --traffic-yellow: 42 88% 56%;
+    --traffic-green: 134 50% 52%;
 
-    --sidebar-bg: 220 18% 9%;
-    --titlebar-bg: 220 20% 8%;
+    --sidebar-bg: 74 4% 15%;
+    --titlebar-bg: 75 4% 13%;
 
-    --shadow-window: 0 30px 60px -20px hsl(0 0% 0% / 0.6), 0 0 0 1px hsl(220 12% 30% / 0.5);
-    --shadow-elevated: 0 8px 24px -8px hsl(0 0% 0% / 0.5);
-    --shadow-glow: 0 0 30px hsl(211 100% 60% / 0.3);
+    --shadow-window: 0 20px 40px -12px hsl(0 0% 0% / 0.6), 0 0 0 1px rgba(255,255,255,0.06);
+    --shadow-elevated: 0 4px 16px -4px hsl(0 0% 0% / 0.45);
+    --shadow-glow: none;
 
-    /* Backward-compat plain vars used in inline styles */
-    --bg:            hsl(220 18% 10%);
-    --sidebar-bg-color: hsl(220 18% 9%);
-    --toolbar-bg:    hsl(220 20% 8%);
-    --header-bg:     hsl(220 16% 13%);
-    --input-bg:      hsl(220 12% 18%);
-    --border-color:  hsl(220 12% 22%);
-    --hover:         hsl(220 14% 17%);
-    --text:          hsl(210 20% 96%);
-    --text-soft:     hsl(210 15% 78%);
-    --text-muted:    hsl(215 12% 62%);
-    --text-disabled: hsl(215 10% 38%);
-    --accent-color:  hsl(211 100% 60%);
-    --accent-bg:     hsl(211 100% 60% / 0.14);
+    /* Backward-compat plain vars */
+    --bg:               #1E201C;
+    --sidebar-bg-color: #272823;
+    --toolbar-bg:       #1F201C;
+    --header-bg:        #272823;
+    --input-bg:         #2E302A;
+    --border-color:     rgba(255,255,255,0.06);
+    --hover:            #33362E;
+    --text:             #dedede;
+    --text-soft:        #A8B5C2;
+    --text-muted:       #6E7681;
+    --text-disabled:    #4B5563;
+    --accent-color:     #3688FF;
+    --accent-bg:        rgba(54,136,255,0.14);
 
     /* Tag colours */
-    --tag-red:    hsl(0 78% 62%);
-    --tag-orange: hsl(28 95% 58%);
-    --tag-yellow: hsl(42 95% 56%);
-    --tag-green:  hsl(134 60% 52%);
-    --tag-blue:   hsl(211 100% 60%);
-    --tag-purple: hsl(280 80% 65%);
-    --tag-gray:   hsl(220 10% 58%);
+    --tag-red:    #F85149;
+    --tag-orange: hsl(28 80% 56%);
+    --tag-yellow: hsl(42 72% 54%);
+    --tag-green:  #3FB950;
+    --tag-blue:   #3688FF;
+    --tag-purple: hsl(255 48% 65%);
+    --tag-gray:   #6E7681;
 
-    /* Body backdrop gradients */
+    /* Body backdrop — subtle vertical depth for content area */
     --backdrop:
-      radial-gradient(ellipse at top left,    hsl(211 100% 60% / 0.12), transparent 55%),
-      radial-gradient(ellipse at bottom right, hsl(280 80% 65% / 0.10), transparent 55%);
-    --backdrop-base: hsl(240 28% 8%);
+      radial-gradient(ellipse at top left,    rgba(54,136,255,0.04), transparent 60%),
+      radial-gradient(ellipse at bottom right, rgba(54,136,255,0.02), transparent 60%);
+    --backdrop-base: #1E201C;
+    --content-bg: linear-gradient(to bottom, #1E201C, #22241E);
 
-    /* Folder icon palette */
-    --folder-tab-top:   #A9D4F6;
-    --folder-tab-bot:   #6FA9D9;
-    --folder-body-top:  #86C1F0;
-    --folder-body-mid:  #6AAEE2;
-    --folder-body-bot:  #4E95CD;
+    /* Folder icon palette — Apple system blue #3478C6 */
+    --folder-tab-top:   #7DB4FF;
+    --folder-tab-bot:   #1E6FE8;
+    --folder-body-top:  #5A9FFF;
+    --folder-body-mid:  #3688FF;
+    --folder-body-bot:  #1E6FE8;
     --folder-stroke:    transparent;
   }
 
   .light {
-    --background: 0 0% 98%;
-    --foreground: 220 18% 12%;
+    /* ── Soft, non-glaring Light ── #F5F7FA base, blue accent #3688FF */
+    --background: 0 0% 99%;
+    --foreground: 220 36% 8%;
 
     --surface-1: 0 0% 100%;
-    --surface-2: 220 16% 95%;
-    --surface-3: 220 14% 88%;
+    --surface-2: 220 22% 97%;
+    --surface-3: 218 20% 92%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 18% 12%;
+    --card-foreground: 220 36% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 18% 12%;
+    --popover-foreground: 220 36% 8%;
 
-    --secondary: 220 14% 92%;
-    --secondary-foreground: 220 18% 12%;
+    --primary: 218 100% 61%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 218 100% 73%;
 
-    --muted: 220 12% 94%;
-    --muted-foreground: 220 10% 38%;
+    --secondary: 218 20% 92%;
+    --secondary-foreground: 220 36% 8%;
 
-    --sidebar-bg: 220 16% 94%;
-    --titlebar-bg: 220 16% 92%;
+    --muted: 220 18% 93%;
+    --muted-foreground: 216 12% 55%;
 
-    --border: 220 12% 85%;
-    --input: 220 12% 85%;
+    --accent: 218 100% 61%;
+    --accent-foreground: 0 0% 100%;
 
-    --shadow-window: 0 30px 60px -20px hsl(220 30% 30% / 0.25), 0 0 0 1px hsl(220 12% 80% / 0.6);
-    --shadow-elevated: 0 6px 20px -6px hsl(220 30% 30% / 0.18);
-    --shadow-glow: 0 0 24px hsl(211 100% 50% / 0.25);
+    --destructive: 3 88% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 134 52% 40%;
+    --warning: 38 88% 44%;
 
-    --bg:            hsl(0 0% 98%);
-    --sidebar-bg-color: hsl(220 16% 94%);
-    --toolbar-bg:    hsl(220 16% 92%);
-    --header-bg:     hsl(0 0% 100%);
-    --input-bg:      hsl(0 0% 100%);
-    --border-color:  hsl(220 12% 85%);
-    --hover:         hsl(220 16% 94%);
-    --text:          hsl(220 18% 12%);
-    --text-soft:     hsl(220 12% 30%);
-    --text-muted:    hsl(220 10% 48%);
-    --text-disabled: hsl(220 8% 68%);
-    --accent-color:  hsl(211 100% 50%);
-    --accent-bg:     hsl(211 100% 50% / 0.10);
+    --border: 220 14% 88%;
+    --input: 220 14% 90%;
+    --ring: 218 100% 61%;
 
-    --backdrop:
-      radial-gradient(ellipse at top left,    hsl(211 100% 60% / 0.08), transparent 60%),
-      radial-gradient(ellipse at bottom right, hsl(280 80% 65% / 0.08), transparent 60%);
-    --backdrop-base: hsl(220 20% 96%);
+    --radius: 0.375rem;
 
-    /* Folder icon palette — deeper saturation for legibility on light bg */
-    --folder-tab-top:   #4DA8FF;
-    --folder-tab-bot:   #1F6FB3;
-    --folder-body-top:  #3D9BEF;
-    --folder-body-mid:  #1F7BD0;
-    --folder-body-bot:  #1561A6;
+    --traffic-red: 0 72% 50%;
+    --traffic-yellow: 42 90% 48%;
+    --traffic-green: 134 55% 40%;
+
+    --sidebar-bg: 0 0% 90%;
+    --titlebar-bg: 220 18% 91%;
+
+    --shadow-window: 0 4px 18px -4px rgba(15,23,42,0.12), 0 0 0 1px rgba(15,23,42,0.08);
+    --shadow-elevated: 0 2px 8px -2px rgba(15,23,42,0.09);
+    --shadow-glow: none;
+
+    /* Backward-compat plain vars */
+    --bg:               #F5F7FA;
+    --sidebar-bg-color: #EEF2F7;
+    --toolbar-bg:       #EEF2F7;
+    --header-bg:        #FFFFFF;
+    --input-bg:         #FFFFFF;
+    --border-color:     rgba(15,23,42,0.08);
+    --hover:            #E8EDF5;
+    --text:             #111827;
+    --text-soft:        #5B6472;
+    --text-muted:       #8A94A6;
+    --text-disabled:    #B0B8C5;
+    --accent-color:     #3688FF;
+    --accent-bg:        rgba(54,136,255,0.12);
+
+    /* Tag colours */
+    --tag-red:    hsl(3 80% 52%);
+    --tag-orange: hsl(28 82% 48%);
+    --tag-yellow: hsl(42 82% 44%);
+    --tag-green:  hsl(134 52% 38%);
+    --tag-blue:   #3688FF;
+    --tag-purple: hsl(255 60% 58%);
+    --tag-gray:   #8A94A6;
+
+    --backdrop: none;
+    --backdrop-base: #FCFCFC;
+
+    /* Folder icon palette */
+    --folder-tab-top:   #7DB4FF;
+    --folder-tab-bot:   #1E6FE8;
+    --folder-body-top:  #5A9FFF;
+    --folder-body-mid:  #3688FF;
+    --folder-body-bot:  #1E6FE8;
     --folder-stroke:    rgba(15, 76, 130, 0.35);
   }
 }
@@ -210,7 +240,7 @@
 html, body, #root {
   height: 100%;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
   font-feature-settings: "ss01", "cv11";
   font-size: 13px;
   color: var(--text);
@@ -221,8 +251,14 @@ html, body, #root {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
-  transition: background-color 0.25s ease, color 0.25s ease;
+body {}
+
+/* ─── SF Pro font utilities ─── */
+.font-sf-display {
+  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+.font-sf-text {
+  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 /* ─── Scrollbars ─── */
@@ -243,6 +279,11 @@ body {
 /* ─── Panel resize handle ─── */
 [data-panel-resize-handle-enabled] { cursor: col-resize; }
 
+/* ─── Dark mode: subtle vertical gradient on content area ─── */
+.dark .content-area {
+  background: linear-gradient(to bottom, #1E201C, #22241E);
+}
+
 /* ─── Glass + component utilities ─── */
 @layer components {
   .glass {
@@ -260,14 +301,33 @@ body {
   .row-hover { transition: background 0.15s ease; }
   .row-hover:hover { background: hsl(var(--surface-2)); }
   .row-active {
-    background: linear-gradient(90deg, hsl(var(--primary) / 0.18), hsl(var(--primary) / 0.08));
+    background: hsl(var(--primary) / 0.14);
     color: hsl(var(--foreground));
   }
 
-  /* Sidebar gradient active state */
+  /* Sidebar active state */
   .sidebar-active {
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(232 90% 65%));
-    color: hsl(var(--primary-foreground));
+    background: hsl(var(--primary) / 0.13);
+    color: hsl(var(--primary));
+  }
+  .dark .sidebar-active {
+    background: rgba(54,136,255,0.18);
+    color: #3688FF;
+  }
+  .light .sidebar-active {
+    background: #B8B7B9;
+    color: #1C1C1E;
+  }
+  .light .sidebar-active svg,
+  .light .sidebar-active [class*="color:#"] {
+    color: #1C1C1E !important;
+  }
+  .light .sidebar-idle-text {
+    color: #393939 !important;
+  }
+  .light .folder-icon-bg {
+    background: hsl(var(--surface-2)) !important;
+    box-shadow: 0 0 0 1px hsl(var(--border) / 0.6);
   }
 
   /* Thin scrollbar for panels */
@@ -294,9 +354,7 @@ body {
 
 /* ─── Context menu ─── */
 .nd-context-menu {
-  background: hsl(var(--surface-1) / 0.85);
-  backdrop-filter: saturate(180%) blur(30px);
-  -webkit-backdrop-filter: saturate(180%) blur(30px);
+  background: hsl(var(--surface-1));
   border: 1px solid hsl(var(--border) / 0.7);
   color: hsl(var(--foreground));
   box-shadow:

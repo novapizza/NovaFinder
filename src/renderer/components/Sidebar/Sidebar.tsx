@@ -12,9 +12,9 @@ import { FileIcon } from '../FileIcon'
 
 type Item = { label: string; path: string; icon: SidebarIconName }
 
-const ITEM_BASE = 'flex w-full items-center gap-2.5 rounded-md text-[13px] transition-all text-left font-[450]'
-const ITEM_ACTIVE = 'sidebar-active shadow-sm'
-const ITEM_IDLE = 'text-foreground/85 hover:bg-surface-2'
+const ITEM_BASE = 'flex w-full items-center gap-2.5 rounded-md text-[13px] transition-all text-left font-[500]'
+const ITEM_ACTIVE = 'sidebar-active'
+const ITEM_IDLE = '[color:#C4CDD6] sidebar-idle-text hover:bg-surface-2'
 
 export function Sidebar() {
   const { activePaneId, panes, navigateTo, setTagFilter } = usePaneStore()
@@ -94,7 +94,7 @@ export function Sidebar() {
               style={{ padding: '7px 9px' }}
               className={`${ITEM_BASE} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
             >
-              <SidebarIcon name="recents" className={`h-[18px] w-[18px] ${active ? 'text-white' : SIDEBAR_ACCENT.recents}`} />
+              <SidebarIcon name="recents" className={`h-[18px] w-[18px] ${active ? '[color:#2177FF]' : SIDEBAR_ACCENT.recents}`} />
               <span className="flex-1 truncate">Recents</span>
             </button>
           )
@@ -108,7 +108,7 @@ export function Sidebar() {
               style={{ padding: '7px 9px' }}
               className={`${ITEM_BASE} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
             >
-              <SidebarIcon name={item.icon} className={`h-[18px] w-[18px] ${active ? 'text-white' : SIDEBAR_ACCENT[item.icon]}`} />
+              <SidebarIcon name={item.icon} className={`h-[18px] w-[18px] ${active ? '[color:#2177FF]' : SIDEBAR_ACCENT[item.icon]}`} />
               <span className="flex-1 truncate">{item.label}</span>
             </button>
           )
@@ -127,7 +127,7 @@ export function Sidebar() {
                   style={{ padding: '7px 9px' }}
                   className={`${ITEM_BASE} flex-1 ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
                 >
-                  <SidebarIcon name="pin" className={`h-[18px] w-[18px] ${active ? 'text-white' : SIDEBAR_ACCENT.pin}`} />
+                  <SidebarIcon name="pin" className={`h-[18px] w-[18px] ${active ? '[color:#2177FF]' : SIDEBAR_ACCENT.pin}`} />
                   <span className="flex-1 truncate">{item.label}</span>
                 </button>
                 <button
@@ -157,7 +157,7 @@ export function Sidebar() {
                   className={`${ITEM_BASE} flex-1 ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
                   title={`${sf.mode}: "${sf.query}" in ${sf.scope}`}
                 >
-                  <svg className={`h-[18px] w-[18px] ${active ? 'text-white' : 'text-primary'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                  <svg className={`h-[18px] w-[18px] ${active ? '[color:#2177FF]' : '[color:#7B8794]'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
                   <span className="flex-1 truncate">{sf.name}</span>
                 </button>
                 <button
@@ -185,7 +185,7 @@ export function Sidebar() {
                 style={{ padding: '7px 9px' }}
                 className={`${ITEM_BASE} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
               >
-                <SidebarIcon name="recent-folder" className={`h-[18px] w-[18px] ${active ? 'text-white' : SIDEBAR_ACCENT['recent-folder']}`} />
+                <SidebarIcon name="recent-folder" className={`h-[18px] w-[18px] ${active ? '[color:#2177FF]' : SIDEBAR_ACCENT['recent-folder']}`} />
                 <span className="flex-1 truncate">{item.name}</span>
               </button>
             )
@@ -204,7 +204,7 @@ export function Sidebar() {
               style={{ padding: '7px 9px' }}
               className={`${ITEM_BASE} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
             >
-              <SidebarIcon name={item.icon} className={`h-[18px] w-[18px] ${active ? 'text-white' : SIDEBAR_ACCENT[item.icon]}`} />
+              <SidebarIcon name={item.icon} className={`h-[18px] w-[18px] ${active ? '[color:#2177FF]' : SIDEBAR_ACCENT[item.icon]}`} />
               <span className="flex-1 truncate">{item.label}</span>
             </button>
           )

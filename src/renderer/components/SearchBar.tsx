@@ -153,7 +153,7 @@ export function SearchBar() {
           }}
           placeholder="Search…"
           className={[
-            'h-8 w-48 rounded-lg border bg-surface-2/60 pl-3 pr-8 text-xs text-foreground placeholder:text-muted-foreground/70 outline-none transition-all',
+            'h-9 w-48 rounded-md border bg-surface-2/60 pl-3 pr-8 text-[13px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all',
             focused || showDropdown
               ? 'w-64 border-primary/60 bg-surface-1 shadow-glow'
               : 'border-border/60',
@@ -167,7 +167,7 @@ export function SearchBar() {
             </svg>
           </button>
         ) : (
-          <svg className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-muted-foreground/60" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg className="pointer-events-none absolute right-2.5 h-4.5 w-4.5 text-muted-foreground/60" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="7" cy="7" r="4.5" />
             <path d="M10.5 10.5l3 3" />
           </svg>
@@ -175,7 +175,7 @@ export function SearchBar() {
       </div>
 
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-full mt-1 nd-context-menu rounded-[10px] py-2 text-[13px] shadow-[0_14px_48px_rgba(0,0,0,0.35)]" style={{ minWidth: 240 }}>
+        <div className="absolute left-0 right-0 top-full mt-1 nd-context-menu rounded-lg py-2 text-[13px] shadow-[0_14px_48px_rgba(0,0,0,0.35)]" style={{ minWidth: 240 }}>
           {isSizeMode ? (
             <SuggestionGroup title="Size Filter">
               {visibleSizes.length > 0 ? visibleSizes.map((s) => (

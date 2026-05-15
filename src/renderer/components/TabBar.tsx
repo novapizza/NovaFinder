@@ -24,7 +24,7 @@ export function TabBar({ paneId }: Props) {
             key={t.id}
             onClick={() => switchTab(paneId, t.id)}
             className={[
-              'group flex items-center gap-1.5 px-2.5 h-7 rounded-t-md text-[12px] cursor-default select-none max-w-[180px]',
+              'group flex items-center gap-2 px-4 h-8 rounded-t-md text-[12px] cursor-default select-none max-w-[220px]',
               active
                 ? 'bg-background text-foreground border border-b-0 border-border/60'
                 : 'bg-surface-2/40 text-muted-foreground hover:bg-surface-2/70 hover:text-foreground',

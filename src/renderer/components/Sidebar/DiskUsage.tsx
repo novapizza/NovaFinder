@@ -29,7 +29,7 @@ export function DiskUsage({ label = 'Macintosh HD', path = '/' }: { label?: stri
       </div>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-primary to-[hsl(232_90%_65%)] transition-[width] duration-500"
+          className="h-full rounded-full bg-primary transition-[width] duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
