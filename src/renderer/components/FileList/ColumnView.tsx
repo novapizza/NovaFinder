@@ -4,6 +4,7 @@ import { useDirectory, type FileEntry } from './useDirectory'
 import { FileIcon } from '../FileIcon'
 import { useRecentsStore } from '../../store/recentsStore'
 import { sortEntries } from '../../lib/sort'
+import { useSettingsStore } from '../../store/settingsStore'
 import { useFileMenu } from '../../hooks/useFileMenu'
 
 type Props = {
@@ -122,10 +123,11 @@ type ColumnPanelProps = {
 
 function ColumnPanel({ path, showHidden, selectedPath, sortKey, sortDir, onSelect, onOpen, onContextMenu, onBgContextMenu }: ColumnPanelProps) {
   const { entries, loading } = useDirectory(path, showHidden)
+  const foldersFirst = useSettingsStore((s) => s.windowsStyleSort)
 
   const sorted = useMemo(
-    () => sortEntries(entries, sortKey, sortDir),
-    [entries, sortKey, sortDir],
+    () => sortEntries(entries, sortKey, sortDir, { foldersFirst }),
+    [entries, sortKey, sortDir, foldersFirst],
   )
 
   return (

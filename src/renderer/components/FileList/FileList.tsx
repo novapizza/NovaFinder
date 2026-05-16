@@ -15,6 +15,7 @@ import { useTagStore, type TagColor, EMPTY_TAGS, parseTagColor } from '../../sto
 import { useRecentsStore, RECENTS_PATH } from '../../store/recentsStore'
 import { useRecentFoldersStore } from '../../store/recentFoldersStore'
 import { useGitStatus } from '../../hooks/useGitStatus'
+import { useSettingsStore } from '../../store/settingsStore'
 import { FileIcon } from '../FileIcon'
 
 type Props = {
@@ -92,17 +93,18 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
 
   const { query: searchQuery, mode: searchMode, results: searchResults, scope: searchScope, searching } = useSearchStore()
   const tagMap = useTagStore((s) => s.map)
+  const foldersFirst = useSettingsStore((s) => s.windowsStyleSort)
   const isSearching = !!(searchQuery && searchMode && searchScope === pane.path) && !isVirtualMode
 
   const sorted = useMemo(() => {
     const list = isSearching ? searchResults : entries
-    const base = sortEntries(list, pane.sortKey, pane.sortDir)
+    const base = sortEntries(list, pane.sortKey, pane.sortDir, { foldersFirst })
     if (pane.tagFilter) {
       const f = pane.tagFilter as TagColor
       return base.filter((e) => (tagMap[e.path] ?? EMPTY_TAGS).includes(f))
     }
     return base
-  }, [entries, pane.sortKey, pane.sortDir, isSearching, searchResults, pane.tagFilter, tagMap])
+  }, [entries, pane.sortKey, pane.sortDir, isSearching, searchResults, pane.tagFilter, tagMap, foldersFirst])
 
   useEffect(() => {
     window.fs.homedir().then((home) => {

@@ -56,6 +56,10 @@ contextBridge.exposeInMainWorld('fs', {
     ipcRenderer.on('fs:watch:event', (_e, data) => cb(data))
     return () => ipcRenderer.removeAllListeners('fs:watch:event')
   },
+  onOpenSettings: (cb: () => void) => {
+    ipcRenderer.on('app:open-settings', cb)
+    return () => ipcRenderer.removeAllListeners('app:open-settings')
+  },
 })
 
 contextBridge.exposeInMainWorld('tags', {
@@ -103,6 +107,7 @@ declare global {
       watchStart(p: string): void
       watchStop(p: string): void
       onWatchEvent(cb: (e: { dirPath: string; eventType: string; filename: string }) => void): () => void
+      onOpenSettings(cb: () => void): () => void
     }
     tags: {
       loadAll(): Promise<Record<string, TagColor[]>>

@@ -13,6 +13,7 @@ import { useTheme } from './hooks/useTheme'
 import { usePaneStore } from './store/paneStore'
 import { useFileOps } from './hooks/useFileOps'
 import { PromptModal } from './components/PromptModal'
+import { SettingsModal } from './components/SettingsModal'
 import { useSearchStore } from './store/searchStore'
 import { RECENTS_PATH } from './store/recentsStore'
 import { SMART_PATH_PREFIX } from './store/smartFoldersStore'
@@ -22,6 +23,12 @@ export default function App() {
   const [showPreview, setShowPreview] = useState(true)
   const [previewFile, setPreviewFile] = useState<{ path: string; ext: string } | null>(null)
   const [globalInfoPath, setGlobalInfoPath] = useState<string | null>(null)
+  const [showSettings, setShowSettings] = useState(false)
+
+  useEffect(() => {
+    const off = window.fs.onOpenSettings(() => setShowSettings(true))
+    return () => { off() }
+  }, [])
   const reloadFn = useRef<(() => void) | null>(null)
   const newFolderFn = useRef<(() => void) | null>(null)
   const newFileFn = useRef<(() => void) | null>(null)
@@ -129,6 +136,7 @@ export default function App() {
       </div>
 
       {globalInfoPath && <GetInfoModal filePath={globalInfoPath} onClose={() => setGlobalInfoPath(null)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       <PromptModal />
     </div>
   )

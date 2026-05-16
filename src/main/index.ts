@@ -16,6 +16,12 @@ function buildMenu(win: BrowserWindow) {
           submenu: [
             { role: 'about' as const },
             { type: 'separator' as const },
+            {
+              label: 'Settings…',
+              accelerator: 'Cmd+,',
+              click: () => { win.webContents.send('app:open-settings') },
+            },
+            { type: 'separator' as const },
             { role: 'services' as const },
             { type: 'separator' as const },
             { role: 'hide' as const },
