@@ -19,7 +19,7 @@ export function TextPreview({ filePath }: Props) {
 
   return (
     <div className="flex-1 overflow-auto p-3">
-      <pre className="text-xs text-[var(--text)] font-mono whitespace-pre-wrap break-words leading-5">{text}</pre>
+      <pre className="text-[13px] text-[var(--text)] font-mono whitespace-pre-wrap break-words leading-[1.55]">{text}</pre>
     </div>
   )
 }

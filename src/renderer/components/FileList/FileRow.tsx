@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FileEntry } from './useDirectory'
 import { formatSize, formatDate } from '../../lib/formatters'
 import { useClipboardStore } from '../../store/clipboardStore'
@@ -42,6 +42,16 @@ export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContext
   const [editing, setEditing] = useState(!!startInEdit)
   const [editName, setEditName] = useState(entry.name)
   const [dropActive, setDropActive] = useState(false)
+
+  // Enter rename mode when the parent flips startInEdit on (e.g. context-menu
+  // "Rename" or Enter shortcut). useState only reads the initial value, so the
+  // prop change must be propagated via an effect.
+  useEffect(() => {
+    if (startInEdit) {
+      setEditName(entry.name)
+      setEditing(true)
+    }
+  }, [startInEdit, entry.name])
   const cutFiles = useClipboardStore((s) => s.files)
   const operation = useClipboardStore((s) => s.operation)
   const isCut = operation === 'cut' && cutFiles.includes(entry.path)

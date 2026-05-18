@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FileEntry } from './useDirectory'
 import { isImageExt } from '../../lib/fileIcons'
 import { novaFileUrl } from '../../lib/formatters'
@@ -115,6 +115,13 @@ function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, 
   const [editing, setEditing] = useState(!!startInEdit)
   const [name, setName] = useState(entry.name)
   const [dropActive, setDropActive] = useState(false)
+
+  useEffect(() => {
+    if (startInEdit) {
+      setName(entry.name)
+      setEditing(true)
+    }
+  }, [startInEdit, entry.name])
   const cutFiles = useClipboardStore((s) => s.files)
   const operation = useClipboardStore((s) => s.operation)
   const isCut = operation === 'cut' && cutFiles.includes(entry.path)
