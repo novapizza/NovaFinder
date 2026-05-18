@@ -1,16 +1,49 @@
 # NovaFinder
 
-A powerful, modern file manager for macOS built with Electron, React, and TypeScript.
+An open-source alternative file manager for macOS, built because Finder leaves a lot on the table.
+
+> **Status:** Beta. NovaFinder is a *companion* to Finder, not a replacement — macOS doesn't actually allow replacing Finder, and you shouldn't trust any single file manager (including this one) with your only copy of anything. Back up your data.
+
+## Why this exists
+
+Finder is fine for the 80% case and frustrating for the rest. NovaFinder focuses on the parts Finder is weakest at:
+
+- **Saved searches that actually stick around** — Smart Folders for kind / size / name / content, surfaced in the sidebar.
+- **Two panes, one window** — the single biggest productivity gap vs. Finder for anyone who moves files around for a living.
+- **A Quick Look that understands code** — syntax-highlighted previews via Shiki, plus images, video, PDF, HTML, and text.
+- **Git-aware browsing** — modified / staged / untracked badges right in the file list.
+
+If none of those sound like a problem you have, Finder is probably already good enough. If two or more do, give NovaFinder a try.
+
+## See it in action
+
+> The GIFs below live in [docs/gifs/](docs/gifs/). If you're viewing this on GitHub and they're missing, the project hasn't shipped its first release yet.
+
+### Smart Folders — saved searches in the sidebar
+![Smart Folders demo](docs/gifs/smart-folders.gif)
+
+### Dual-pane file moves
+![Dual-pane demo](docs/gifs/dual-pane.gif)
+
+### Quick Look with syntax-highlighted source
+![Quick Look code preview](docs/gifs/quicklook-code.gif)
+
+### Git status badges in the file list
+![Git status badges](docs/gifs/git-badges.gif)
+
+## Install
+
+Pre-built, notarized `.dmg` releases are on the [Releases page](../../releases). Or build from source — see below.
 
 ## Features
 
 ### Navigation & Views
-- **Dual-pane navigation** — Browse and manage files side by side, with optional sync
+- **Dual-pane navigation** — browse and manage files side by side, with optional sync
 - **Four view modes** — List, Column, Gallery, and Icon/Grid
-- **Editable breadcrumb path bar** — Click to type a path or jump up the hierarchy
+- **Editable breadcrumb path bar** — click to type a path or jump up the hierarchy
 - **Back / forward / up** with full history per pane
-- **Pinned favorites & recent folders** — One-click access to where you work
-- **Smart Folders** — Saved searches for kind, size, name, and content
+- **Pinned favorites & recent folders**
+- **Smart Folders** — saved searches for kind, size, name, and content
 - **Arrow-key navigation** through file lists
 
 ### File Operations
@@ -54,7 +87,7 @@ A powerful, modern file manager for macOS built with Electron, React, and TypeSc
 | Bundler | electron-vite / Vite 6 |
 | State | Zustand |
 
-## Getting Started
+## Building from source
 
 ### Prerequisites
 
@@ -118,6 +151,10 @@ NovaFinder/
 | ⌘D | Duplicate |
 | ⌘⌫ | Move to Trash |
 | ⌘I | Get Info |
+
+## Contributing
+
+Issues and PRs welcome. This is a side project — response times vary. Bug reports for data-loss scenarios get priority over feature requests.
 
 ## License
 
