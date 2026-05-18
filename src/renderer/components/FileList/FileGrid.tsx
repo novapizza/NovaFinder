@@ -136,6 +136,7 @@ function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, 
 
   return (
     <button
+      data-path={entry.path}
       draggable={!editing}
       onDragStart={(e) => onDragStartItem?.(entry, e)}
       onDragOver={(e) => {

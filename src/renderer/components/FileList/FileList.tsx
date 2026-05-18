@@ -44,6 +44,10 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   const { entries: dirEntries, loading, error, reload } = useDirectory(isVirtualMode ? '' : pane.path, showHidden)
   const [smartResults, setSmartResults] = useState<typeof dirEntries>([])
   const [smartLoading, setSmartLoading] = useState(false)
+  // Bumped after destructive ops (delete, move, rename, …) so that virtual
+  // views — smart folders, tags, search — re-run their query. The plain
+  // useDirectory reload doesn't help in those modes because dirPath is ''.
+  const [virtualRefreshTick, setVirtualRefreshTick] = useState(0)
   useEffect(() => {
     if (!smartFolder) { setSmartResults([]); return }
     setSmartLoading(true)
@@ -53,7 +57,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
       .catch(() => { if (!cancelled) setSmartResults([]) })
       .finally(() => { if (!cancelled) setSmartLoading(false) })
     return () => { cancelled = true }
-  }, [smartFolder?.id, smartFolder?.scope, smartFolder?.mode, smartFolder?.query])
+  }, [smartFolder?.id, smartFolder?.scope, smartFolder?.mode, smartFolder?.query, virtualRefreshTick])
 
   // Tag virtual mode: collect every path in tagStore.map tagged with this color,
   // stat them in batch, and present like a directory listing (Finder-style).
@@ -73,7 +77,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
       .catch(() => { if (!cancelled) setTagResults([]) })
       .finally(() => { if (!cancelled) setTagLoading(false) })
     return () => { cancelled = true }
-  }, [tagColor, tagMapForList])
+  }, [tagColor, tagMapForList, virtualRefreshTick])
 
   const entries = isRecentsMode
     ? recentEntries.map((r) => ({ name: r.name, path: r.path, isDirectory: false, size: 0, modified: r.openedAt, ext: r.ext }))
@@ -82,7 +86,40 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
     : isTagMode
     ? tagResults
     : dirEntries
-  const { rename, paste, newFolder, newFile } = useFileOps(reload)
+  // Mode-aware reload. For virtual views (smart folder / tag / search)
+  // we prefer optimistic client-side filtering when the caller can tell us
+  // which paths were removed — re-running the underlying query races with
+  // the OS-level trash and can briefly return empty.
+  function reloadAll(removedPaths?: string[]) {
+    if (removedPaths && removedPaths.length > 0) {
+      const removed = new Set(removedPaths)
+      if (isSmartMode) {
+        setSmartResults((prev) => prev.filter((e) => !removed.has(e.path)))
+        return
+      }
+      if (isTagMode) {
+        setTagResults((prev) => prev.filter((e) => !removed.has(e.path)))
+        return
+      }
+      const s = useSearchStore.getState()
+      const activeSearch = !!(s.query && s.mode && s.scope === pane.path) && !isVirtualMode
+      if (activeSearch) {
+        s.setResults(pane.path, s.results.filter((e) => !removed.has(e.path)))
+        return
+      }
+      // Real folder view — the file watcher will refresh, but call reload
+      // explicitly to keep it snappy.
+      reload()
+      return
+    }
+    // No specific paths — full refresh (toolbar Refresh / ⌘R).
+    if (isSmartMode || isTagMode) {
+      setVirtualRefreshTick((n) => n + 1)
+      return
+    }
+    reload()
+  }
+  const { rename, paste, newFolder, newFile } = useFileOps(reloadAll)
   const [renamingPath, setRenamingPath] = useState<string | null>(null)
   const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -112,7 +149,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
     })
   }, [])
 
-  useEffect(() => { registerReload?.(reload) }, [reload])
+  useEffect(() => { registerReload?.(reloadAll) }, [reload, isSmartMode, isTagMode, pane.path])
 
   useEffect(() => {
     registerNewFolder?.(() => { setPendingNew({ type: 'folder' }) })
@@ -288,13 +325,13 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
       }
     }
     if (pairs.length) useHistoryStore.getState().push({ kind: 'move', pairs })
-    reload()
+    reloadAll()
   }
 
   const fileMenu = useFileMenu({
     paneId,
     paneRef,
-    reload,
+    reload: reloadAll,
     onRequestRename: (p) => setRenamingPath(p),
     onRequestNew: (type) => setPendingNew({ type }),
   })
@@ -307,6 +344,67 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
 
   function handleBgContextMenu(e: React.MouseEvent) {
     fileMenu.openBgMenu(e, pane.path)
+  }
+
+  // Marquee (rubber-band) selection. Starts on empty area of the scroll
+  // container; items with [data-path] whose bounding rect intersects the
+  // marquee become selected. Cmd/Ctrl/Shift-drag is additive.
+  const [marquee, setMarquee] = useState<null | { x1: number; y1: number; x2: number; y2: number }>(null)
+  const suppressNextClickRef = useRef(false)
+
+  function handleScrollMouseDown(e: React.MouseEvent) {
+    if (e.button !== 0) return
+    const container = scrollRef.current
+    if (!container) return
+    // Start only on empty space: bail if any ancestor between the click
+    // target and the scroll container has a [data-path] — that means we
+    // clicked on a file/folder item, not background.
+    let el: HTMLElement | null = e.target as HTMLElement
+    while (el && el !== container) {
+      if (el.hasAttribute('data-path')) return
+      el = el.parentElement
+    }
+
+    const startX = e.clientX
+    const startY = e.clientY
+    let moved = false
+    const additive = e.metaKey || e.ctrlKey || e.shiftKey
+    const base = additive ? [...pane.selection] : []
+    setActivePaneId(paneId)
+
+    function onMove(ev: MouseEvent) {
+      if (!moved) {
+        if (Math.abs(ev.clientX - startX) < 4 && Math.abs(ev.clientY - startY) < 4) return
+        moved = true
+      }
+      const x = ev.clientX
+      const y = ev.clientY
+      setMarquee({ x1: startX, y1: startY, x2: x, y2: y })
+      const minX = Math.min(startX, x)
+      const maxX = Math.max(startX, x)
+      const minY = Math.min(startY, y)
+      const maxY = Math.max(startY, y)
+      const items = container!.querySelectorAll<HTMLElement>('[data-path]')
+      const hit: string[] = []
+      items.forEach((el) => {
+        const r = el.getBoundingClientRect()
+        if (r.right < minX || r.left > maxX || r.bottom < minY || r.top > maxY) return
+        const p = el.getAttribute('data-path')
+        if (p) hit.push(p)
+      })
+      const next = additive ? Array.from(new Set([...base, ...hit])) : hit
+      setSelection(paneId, next, next[next.length - 1] ?? null)
+    }
+
+    function onUp() {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      setMarquee(null)
+      if (moved) suppressNextClickRef.current = true
+    }
+
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
   }
 
   if (viewMode === 'column' && !isVirtualMode) {
@@ -333,7 +431,17 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto scrollbar-thin"
-        onClick={(e) => { if (e.target === e.currentTarget) clearSelection() }}
+        onMouseDown={handleScrollMouseDown}
+        onClick={(e) => {
+          if (suppressNextClickRef.current) { suppressNextClickRef.current = false; return }
+          // Empty-space click — only clear if click didn't land on a file item
+          let el: HTMLElement | null = e.target as HTMLElement
+          while (el && el !== e.currentTarget) {
+            if (el.hasAttribute('data-path')) return
+            el = el.parentElement
+          }
+          clearSelection()
+        }}
       >
         {(loading || smartLoading || tagLoading) && !isSearching && sorted.length === 0 && !pendingNew && <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">Loading…</div>}
         {isSearching && searching && <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">Searching…</div>}
@@ -403,6 +511,18 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
       </div>
 
       {fileMenu.element}
+
+      {marquee && (
+        <div
+          className="pointer-events-none fixed z-50 border border-primary/70 bg-primary/15"
+          style={{
+            left: Math.min(marquee.x1, marquee.x2),
+            top: Math.min(marquee.y1, marquee.y2),
+            width: Math.abs(marquee.x2 - marquee.x1),
+            height: Math.abs(marquee.y2 - marquee.y1),
+          }}
+        />
+      )}
     </div>
   )
 }

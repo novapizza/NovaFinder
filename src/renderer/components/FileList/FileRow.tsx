@@ -69,6 +69,7 @@ export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContext
 
   return (
     <div
+      data-path={entry.path}
       draggable={!editing}
       onDragStart={(e) => onDragStartItem?.(entry, e)}
       onDragOver={(e) => {

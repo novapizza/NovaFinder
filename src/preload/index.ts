@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('fs', {
   rename: (src: string, dest: string) => ipcRenderer.invoke('fs:rename', src, dest),
   copy: (src: string, dest: string) => ipcRenderer.invoke('fs:copy', src, dest),
   delete: (p: string) => ipcRenderer.invoke('fs:delete', p),
+  trashWithUndo: (paths: string[]) => ipcRenderer.invoke('fs:trashWithUndo', paths),
   move: (src: string, dest: string) => ipcRenderer.invoke('fs:move', src, dest),
   trashPath: () => ipcRenderer.invoke('fs:trashPath'),
   eject: (volumePath: string) => ipcRenderer.invoke('fs:eject', volumePath),
@@ -81,6 +82,7 @@ declare global {
       rename(src: string, dest: string): Promise<void>
       copy(src: string, dest: string): Promise<void>
       delete(p: string): Promise<void>
+      trashWithUndo(paths: string[]): Promise<{ src: string; dst: string }[]>
       move(src: string, dest: string): Promise<void>
       trashPath(): Promise<string>
       eject(volumePath: string): Promise<void>

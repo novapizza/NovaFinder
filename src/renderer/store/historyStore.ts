@@ -5,6 +5,7 @@ export type Op =
   | { kind: 'move'; pairs: { src: string; dst: string }[] }
   | { kind: 'copy'; created: string[] }
   | { kind: 'create'; path: string }
+  | { kind: 'trash'; pairs: { src: string; dst: string }[] }
 
 type HistoryStore = {
   past: Op[]
@@ -38,6 +39,23 @@ async function invert(op: Op): Promise<Op | null> {
   }
   if (op.kind === 'create') {
     try { await window.fs.delete(op.path) } catch (e) { console.warn('undo create failed', e) }
+    return null
+  }
+  if (op.kind === 'trash') {
+    // Move each file out of Trash back to its original location. Skip any
+    // whose original path already exists — restoring on top would clobber.
+    for (const { src, dst } of op.pairs) {
+      try {
+        if (await window.fs.exists(src)) {
+          console.warn('skip restore — original path already exists', src)
+          continue
+        }
+        await window.fs.move(dst, src)
+      } catch (e) {
+        console.warn('undo trash failed', e)
+      }
+    }
+    // Redo isn't supported for trash — user would have to delete again
     return null
   }
   return null

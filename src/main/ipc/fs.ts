@@ -117,6 +117,42 @@ export function registerFsHandlers() {
     await shell.trashItem(filePath)
   })
 
+  // Like fs:delete, but captures the new location in ~/.Trash for each
+  // source so we can move it back on undo. We snapshot the trash dir
+  // before/after each trashItem call and treat any new entry as the
+  // corresponding trashed file. Best-effort: falls back to basename if
+  // diffing fails (e.g. permission issue reading ~/.Trash).
+  ipcMain.handle('fs:trashWithUndo', async (_e, paths: string[]): Promise<{ src: string; dst: string }[]> => {
+    const trashDir = path.join(os.homedir(), '.Trash')
+    const trashed: { src: string; dst: string }[] = []
+    for (const p of paths) {
+      let before: Set<string>
+      try {
+        before = new Set(await fs.readdir(trashDir))
+      } catch {
+        before = new Set()
+      }
+      try {
+        await shell.trashItem(p)
+      } catch (e) {
+        console.warn('trashItem failed', p, e)
+        continue
+      }
+      let dst: string
+      try {
+        const after = await fs.readdir(trashDir)
+        const added = after.filter((n) => !before.has(n))
+        dst = added.length > 0
+          ? path.join(trashDir, added[0])
+          : path.join(trashDir, path.basename(p))
+      } catch {
+        dst = path.join(trashDir, path.basename(p))
+      }
+      trashed.push({ src: p, dst })
+    }
+    return trashed
+  })
+
   ipcMain.handle('fs:move', async (_e, src: string, dest: string) => {
     try {
       await fs.rename(src, dest)

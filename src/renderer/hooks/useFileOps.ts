@@ -3,7 +3,7 @@ import { usePaneStore } from '../store/paneStore'
 import { useClipboardStore } from '../store/clipboardStore'
 import { useHistoryStore } from '../store/historyStore'
 
-export function useFileOps(onReload?: () => void) {
+export function useFileOps(onReload?: (removedPaths?: string[]) => void) {
   const { panes, activePaneId, setSelection } = usePaneStore()
   const { files: clipFiles, operation, setCut, setCopy, clear } = useClipboardStore()
   const pushHistory = useHistoryStore((s) => s.push)
@@ -90,11 +90,15 @@ export function useFileOps(onReload?: () => void) {
   }
 
 async function deleteFiles(paths: string[]) {
-    for (const p of paths) {
-      try { await window.fs.delete(p) } catch (e) { alert(`Delete failed: ${e}`) }
+    let pairs: { src: string; dst: string }[] = []
+    try {
+      pairs = await window.fs.trashWithUndo(paths)
+    } catch (e) {
+      alert(`Delete failed: ${e}`)
     }
+    if (pairs.length) pushHistory({ kind: 'trash', pairs })
     setSelection(activePaneId, [])
-    onReload?.()
+    onReload?.(pairs.map((p) => p.src))
   }
 
   async function newFolder(parentDir: string, name: string) {
