@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchStore } from '../store/searchStore'
 import { usePaneStore } from '../store/paneStore'
 import { smartFolderPath, useSmartFoldersStore } from '../store/smartFoldersStore'
+import { prompt } from '../store/promptStore'
 
 const SIZE_KEYWORDS = [
   { key: 'tiny',   label: 'Tiny',   desc: '0 – 16 KB' },
@@ -112,17 +113,24 @@ export function SearchBar() {
     inputRef.current?.focus()
   }
 
-  function saveSmartFolder() {
+  async function saveSmartFolder() {
     const scope = panes[activePaneId].path
     const effectiveMode = (mode === 'size' ? 'size' : (mode ?? 'name')) as 'name' | 'content' | 'kind' | 'size'
     const queryValue = effectiveMode === 'size' ? (parseSizeKeyword(query) ?? '') : query.trim()
     if (!queryValue) return
     const defaultName = `${effectiveMode}: ${queryValue}`
-    const name = window.prompt('Smart Folder name', defaultName)
+    setOpen(false)
+    // window.prompt is unreliable in Electron — silently returns null in many
+    // versions — so we use the app's PromptModal.
+    const name = await prompt({
+      title: 'Save as Smart Folder',
+      message: 'Give this saved search a name. It will appear in the sidebar.',
+      defaultValue: defaultName,
+      confirmLabel: 'Save',
+    })
     if (!name) return
     const folder = addSmart({ name, scope, mode: effectiveMode, query: queryValue })
     clear()
-    setOpen(false)
     navigateTo(activePaneId, smartFolderPath(folder.id))
   }
 
@@ -175,7 +183,10 @@ export function SearchBar() {
       </div>
 
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-full mt-1 nd-context-menu rounded-lg py-2 text-[13px] shadow-[0_14px_48px_rgba(0,0,0,0.35)]" style={{ minWidth: 240 }}>
+        <div
+          className="absolute right-0 top-full mt-1 nd-context-menu rounded-lg py-2 text-[13px] shadow-[0_14px_48px_rgba(0,0,0,0.35)] whitespace-nowrap"
+          style={{ minWidth: isSizeMode ? 320 : 260 }}
+        >
           {isSizeMode ? (
             <SuggestionGroup title="Size Filter">
               {visibleSizes.length > 0 ? visibleSizes.map((s) => (
