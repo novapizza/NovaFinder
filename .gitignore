@@ -5,3 +5,5 @@ dist-electron/
 *.tsbuildinfo
 .DS_Store
 .claude/settings.json
+test-results/
+playwright-report/

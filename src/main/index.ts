@@ -76,8 +76,14 @@ function buildMenu(win: BrowserWindow) {
 
 function createWindow() {
   // In production the .app bundle icon is used; dock.setIcon is only useful in dev.
+  // Wrapped in try/catch because the icon path doesn't resolve when the built
+  // bundle is launched outside its packaged location (e.g. e2e tests).
   if (!app.isPackaged && process.platform === 'darwin') {
-    app.dock.setIcon(path.join(app.getAppPath(), 'assets', 'icon.png'))
+    try {
+      app.dock.setIcon(path.join(app.getAppPath(), 'assets', 'icon.png'))
+    } catch (e) {
+      console.warn('dock.setIcon failed:', e)
+    }
   }
 
   const win = new BrowserWindow({

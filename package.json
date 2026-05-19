@@ -13,7 +13,9 @@
     "postdist": "rm -rf dist/mac-arm64 dist/mac dist/builder-debug.yml dist/builder-effective-config.yaml",
     "test": "vitest",
     "test:run": "vitest run",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "e2e": "npm run build && playwright test",
+    "e2e:headed": "npm run build && playwright test --headed"
   },
   "dependencies": {
     "highlight.js": "^11.11.1",
@@ -31,6 +33,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/vite": "^4.1.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

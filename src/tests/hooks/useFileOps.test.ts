@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react'
 import { useFileOps } from '../../renderer/hooks/useFileOps'
 import { usePaneStore } from '../../renderer/store/paneStore'
 import { useClipboardStore } from '../../renderer/store/clipboardStore'
+import { useHistoryStore } from '../../renderer/store/historyStore'
 
 const paneState = (path = '/home') => ({
   path,
@@ -20,6 +21,10 @@ const mockFs = {
   rename: vi.fn().mockResolvedValue(undefined),
   copy: vi.fn().mockResolvedValue(undefined),
   delete: vi.fn().mockResolvedValue(undefined),
+  trashWithUndo: vi.fn().mockImplementation(async (paths: string[]) =>
+    paths.map((p) => ({ src: p, dst: `/Users/u/.Trash/${p.split('/').pop()}` })),
+  ),
+  move: vi.fn().mockResolvedValue(undefined),
   mkdir: vi.fn().mockResolvedValue(undefined),
   writeFile: vi.fn().mockResolvedValue(undefined),
   writeClipboardText: vi.fn().mockResolvedValue(undefined),
@@ -36,6 +41,7 @@ beforeEach(() => {
     viewMode: 'icon',
   })
   useClipboardStore.setState({ files: [], operation: null })
+  useHistoryStore.setState({ past: [], future: [] })
 })
 
 describe('useFileOps', () => {
@@ -101,12 +107,11 @@ describe('useFileOps', () => {
   })
 
   describe('deleteFiles', () => {
-    it('calls fs.delete for each path', async () => {
+    it('passes all paths in a single trashWithUndo call', async () => {
       const { result } = renderHook(() => useFileOps())
       await act(() => result.current.deleteFiles(['/home/a.txt', '/home/b.txt']))
-      expect(mockFs.delete).toHaveBeenCalledTimes(2)
-      expect(mockFs.delete).toHaveBeenCalledWith('/home/a.txt')
-      expect(mockFs.delete).toHaveBeenCalledWith('/home/b.txt')
+      expect(mockFs.trashWithUndo).toHaveBeenCalledTimes(1)
+      expect(mockFs.trashWithUndo).toHaveBeenCalledWith(['/home/a.txt', '/home/b.txt'])
     })
 
     it('clears selection after delete', async () => {
@@ -114,6 +119,31 @@ describe('useFileOps', () => {
       const { result } = renderHook(() => useFileOps())
       await act(() => result.current.deleteFiles(['/home/a.txt']))
       expect(usePaneStore.getState().panes.left.selection).toEqual([])
+    })
+
+    it('pushes a trash op to history with src/dst pairs', async () => {
+      const { result } = renderHook(() => useFileOps())
+      await act(() => result.current.deleteFiles(['/home/a.txt']))
+      const past = useHistoryStore.getState().past
+      expect(past).toHaveLength(1)
+      expect(past[0]).toMatchObject({
+        kind: 'trash',
+        pairs: [{ src: '/home/a.txt', dst: '/Users/u/.Trash/a.txt' }],
+      })
+    })
+
+    it('passes successfully-deleted paths to onReload for optimistic UI', async () => {
+      const onReload = vi.fn()
+      const { result } = renderHook(() => useFileOps(onReload))
+      await act(() => result.current.deleteFiles(['/home/a.txt', '/home/b.txt']))
+      expect(onReload).toHaveBeenCalledWith(['/home/a.txt', '/home/b.txt'])
+    })
+
+    it('does not push history when nothing was trashed', async () => {
+      mockFs.trashWithUndo.mockResolvedValueOnce([])
+      const { result } = renderHook(() => useFileOps())
+      await act(() => result.current.deleteFiles(['/home/a.txt']))
+      expect(useHistoryStore.getState().past).toHaveLength(0)
     })
   })
 
