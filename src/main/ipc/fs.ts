@@ -368,8 +368,12 @@ export function registerFsHandlers() {
     return dirs
   })
 
-  ipcMain.handle('shell:openInTerminal', (_e, dirPath: string) => {
-    execFile('open', ['-a', 'Terminal', dirPath])
+  ipcMain.handle('shell:openInTerminal', (_e, dirPath: string, appName?: string) => {
+    // Empty / missing appName falls back to macOS's stock Terminal.app —
+    // there's no real "OS default terminal" concept on macOS, so Terminal
+    // is the sensible baseline.
+    const app = appName?.trim() || 'Terminal'
+    execFile('open', ['-a', app, dirPath])
   })
 
   ipcMain.handle('fs:zip', async (_e, filePaths: string[]) => {

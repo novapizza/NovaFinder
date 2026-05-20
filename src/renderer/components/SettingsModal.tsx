@@ -65,10 +65,76 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
   )
 }
 
+// Common macOS terminal apps. The value is the app name `open -a` expects.
+// "" means use the OS default (Terminal.app).
+const TERMINAL_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: 'System default (Terminal)' },
+  { value: 'Terminal', label: 'Terminal' },
+  { value: 'iTerm', label: 'iTerm' },
+  { value: 'Warp', label: 'Warp' },
+  { value: 'Ghostty', label: 'Ghostty' },
+  { value: 'Hyper', label: 'Hyper' },
+  { value: 'Alacritty', label: 'Alacritty' },
+  { value: 'kitty', label: 'kitty' },
+  { value: 'WezTerm', label: 'WezTerm' },
+]
+
 function GeneralTab() {
+  const terminalApp = useSettingsStore((s) => s.terminalApp)
+  const setSetting = useSettingsStore((s) => s.set)
+  const isPreset = TERMINAL_OPTIONS.some((o) => o.value === terminalApp)
+  const [custom, setCustom] = useState(isPreset ? '' : terminalApp)
+  const [mode, setMode] = useState<'preset' | 'custom'>(isPreset ? 'preset' : 'custom')
+
   return (
-    <div className="flex items-center justify-center text-muted-foreground text-[13px] h-full py-8">
-      No general options yet — coming soon.
+    <div className="space-y-4">
+      <Row
+        label="Open in Terminal — preferred app"
+        description={
+          <>
+            Used when you choose <i>Open in Terminal</i> from the context menu or press ⌥⌘T.
+            Pick a preset or enter another app's name (must match the .app file under
+            <code className="px-1 bg-surface-2 rounded mx-1">/Applications</code>).
+          </>
+        }
+      >
+        <div className="flex flex-col items-end gap-2">
+          {mode === 'preset' ? (
+            <select
+              value={terminalApp}
+              onChange={(e) => setSetting('terminalApp', e.target.value)}
+              className="bg-surface-2 border border-border/60 rounded px-2 py-1 text-[12.5px] text-foreground outline-none focus:border-primary"
+            >
+              {TERMINAL_OPTIONS.map((o) => (
+                <option key={o.value || 'default'} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              value={custom}
+              onChange={(e) => setCustom(e.target.value)}
+              onBlur={() => setSetting('terminalApp', custom.trim())}
+              onKeyDown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur() }}
+              placeholder="App name, e.g. Tabby"
+              className="bg-surface-2 border border-border/60 rounded px-2 py-1 text-[12.5px] text-foreground outline-none focus:border-primary w-48"
+            />
+          )}
+          <button
+            onClick={() => {
+              if (mode === 'preset') {
+                setMode('custom')
+                setCustom(terminalApp)
+              } else {
+                setMode('preset')
+                if (!isPreset) setSetting('terminalApp', '')
+              }
+            }}
+            className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {mode === 'preset' ? 'Use a custom app name' : 'Pick from presets'}
+          </button>
+        </div>
+      </Row>
     </div>
   )
 }

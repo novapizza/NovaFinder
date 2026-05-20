@@ -8,6 +8,7 @@ import { useClipboardStore } from '../store/clipboardStore'
 import { useTagStore, type TagColor } from '../store/tagStore'
 import { usePinnedStore } from '../store/pinnedStore'
 import { useFileOps } from './useFileOps'
+import { useSettingsStore } from '../store/settingsStore'
 
 type Entry = { path: string; name: string; isDirectory: boolean; ext: string }
 
@@ -69,7 +70,7 @@ export function useFileMenu({ paneId, paneRef, reload, onRequestRename, onReques
       out.push(
         { label: 'Paste', icon: 'paste', action: () => paste(dir), disabled: !hasClipboard },
         { separator: true },
-        { label: 'Open in Terminal', icon: 'open', action: () => window.fs.openInTerminal(dir) },
+        { label: 'Open in Terminal', icon: 'open', action: () => window.fs.openInTerminal(dir, useSettingsStore.getState().terminalApp) },
         { separator: true },
         { label: 'Get Info', icon: 'info', action: () => setInfoPath(dir) },
         { label: 'Refresh',  icon: 'refresh', action: () => reload() },
@@ -99,7 +100,7 @@ export function useFileMenu({ paneId, paneRef, reload, onRequestRename, onReques
         if (parent !== pane.path) navigateTo(paneId, parent)
         setSelection(paneId, [t], t)
       } },
-      ...(targetIsDir ? [{ label: 'Open in Terminal' as const, icon: 'open' as const, action: () => window.fs.openInTerminal(targets[0]) }] : []),
+      ...(targetIsDir ? [{ label: 'Open in Terminal' as const, icon: 'open' as const, action: () => window.fs.openInTerminal(targets[0], useSettingsStore.getState().terminalApp) }] : []),
       { label: 'Move to Trash', icon: 'trash', action: () => deleteFiles(targets), danger: true },
       { separator: true },
       { label: `Compress ${countLabel}`, icon: 'duplicate', action: () => window.fs.zip(targets).then(reload).catch(() => {}) },

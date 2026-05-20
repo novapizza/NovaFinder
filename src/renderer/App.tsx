@@ -15,6 +15,7 @@ import { useFileOps } from './hooks/useFileOps'
 import { PromptModal } from './components/PromptModal'
 import { SettingsModal } from './components/SettingsModal'
 import { useSearchStore } from './store/searchStore'
+import { useSettingsStore } from './store/settingsStore'
 import { RECENTS_PATH } from './store/recentsStore'
 import { SMART_PATH_PREFIX } from './store/smartFoldersStore'
 import { TAG_PATH_PREFIX } from './store/tagStore'
@@ -72,7 +73,7 @@ export default function App() {
         setShowPreview(true)
       }
     },
-    onOpenInTerminal: (dirPath) => window.fs.openInTerminal(dirPath),
+    onOpenInTerminal: (dirPath) => window.fs.openInTerminal(dirPath, useSettingsStore.getState().terminalApp),
   })
 
   return (

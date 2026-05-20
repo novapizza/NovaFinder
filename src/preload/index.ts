@@ -47,7 +47,7 @@ contextBridge.exposeInMainWorld('fs', {
   zip: (filePaths: string[]) => ipcRenderer.invoke('fs:zip', filePaths),
   unzip: (zipPath: string) => ipcRenderer.invoke('fs:unzip', zipPath),
   gitStatus: (dirPath: string) => ipcRenderer.invoke('fs:gitStatus', dirPath),
-  openInTerminal: (dirPath: string) => ipcRenderer.invoke('shell:openInTerminal', dirPath),
+  openInTerminal: (dirPath: string, appName?: string) => ipcRenderer.invoke('shell:openInTerminal', dirPath, appName),
   listApps: () => ipcRenderer.invoke('apps:list'),
   openWith: (appPath: string, filePaths: string[]) => ipcRenderer.invoke('apps:openWith', appPath, filePaths),
   chooseAppAndOpen: (filePaths: string[]) => ipcRenderer.invoke('apps:chooseAndOpen', filePaths),
@@ -102,7 +102,7 @@ declare global {
       zip(filePaths: string[]): Promise<string>
       unzip(zipPath: string): Promise<void>
       gitStatus(dirPath: string): Promise<Record<string, string>>
-      openInTerminal(dirPath: string): Promise<void>
+      openInTerminal(dirPath: string, appName?: string): Promise<void>
       listApps(): Promise<{ name: string; path: string }[]>
       openWith(appPath: string, filePaths: string[]): Promise<void>
       chooseAppAndOpen(filePaths: string[]): Promise<string | null>
