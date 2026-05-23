@@ -5,6 +5,7 @@ import { useClipboardStore } from '../../store/clipboardStore'
 import { FileIcon } from '../FileIcon'
 import { TagDots } from '../TagDots'
 import { useTagStore, EMPTY_TAGS } from '../../store/tagStore'
+import { readDropPaths } from '../../lib/dragdrop'
 
 type Props = {
   entry: FileEntry
@@ -75,7 +76,9 @@ export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContext
       onDragOver={(e) => {
         if (!entry.isDirectory) return
         const types = Array.from(e.dataTransfer.types)
-        if (!types.includes('application/x-novafinder-paths')) return
+        // Accept either our legacy JSON payload OR a native file drag
+        // (the latter is what arrives once startDrag promotes the gesture).
+        if (!types.includes('application/x-novafinder-paths') && !types.includes('Files')) return
         e.preventDefault()
         e.dataTransfer.dropEffect = 'move'
         if (!dropActive) setDropActive(true)
@@ -83,14 +86,10 @@ export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContext
       onDragLeave={() => setDropActive(false)}
       onDrop={(e) => {
         if (!entry.isDirectory) return
-        const raw = e.dataTransfer.getData('application/x-novafinder-paths')
         setDropActive(false)
-        if (!raw) return
         e.preventDefault()
-        try {
-          const paths: string[] = JSON.parse(raw)
-          onDropOnFolder?.(entry.path, paths)
-        } catch {}
+        const paths = readDropPaths(e)
+        if (paths.length) onDropOnFolder?.(entry.path, paths)
       }}
       className={[
         'grid grid-cols-[32px_minmax(0,1fr)_170px_100px_100px] items-center gap-2 px-3 py-1.5 cursor-default select-none text-[13px]',

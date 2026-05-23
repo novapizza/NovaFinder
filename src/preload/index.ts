@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { FileEntry } from '../main/ipc/fs'
 import type { TagColor } from '../main/ipc/tags'
 
@@ -46,6 +46,13 @@ contextBridge.exposeInMainWorld('fs', {
     ipcRenderer.invoke('fs:searchRecursive', dir, query, mode),
   zip: (filePaths: string[]) => ipcRenderer.invoke('fs:zip', filePaths),
   unzip: (zipPath: string) => ipcRenderer.invoke('fs:unzip', zipPath),
+  listZip: (zipPath: string) => ipcRenderer.invoke('fs:listZip', zipPath),
+  folderSize: (p: string) => ipcRenderer.invoke('fs:folderSize', p),
+  startDrag: (paths: string[]) => ipcRenderer.invoke('shell:startDrag', paths),
+  // webUtils.getPathForFile is the canonical way to recover a real fs
+  // path from a File object received via a native drop. Lives in the
+  // renderer side of electron so it must be bridged through preload.
+  getPathForFile: (file: File) => webUtils.getPathForFile(file),
   gitStatus: (dirPath: string) => ipcRenderer.invoke('fs:gitStatus', dirPath),
   openInTerminal: (dirPath: string, appName?: string) => ipcRenderer.invoke('shell:openInTerminal', dirPath, appName),
   listApps: () => ipcRenderer.invoke('apps:list'),
@@ -101,6 +108,10 @@ declare global {
       searchRecursive(dir: string, query: string, mode: 'name' | 'content' | 'kind' | 'size'): Promise<FileEntry[]>
       zip(filePaths: string[]): Promise<string>
       unzip(zipPath: string): Promise<void>
+      listZip(zipPath: string): Promise<{ name: string; path: string; isDirectory: boolean; size: number; modified: number; ext: string }[]>
+      folderSize(p: string): Promise<{ size: number; files: number; folders: number }>
+      startDrag(paths: string[]): Promise<void>
+      getPathForFile(file: File): string
       gitStatus(dirPath: string): Promise<Record<string, string>>
       openInTerminal(dirPath: string, appName?: string): Promise<void>
       listApps(): Promise<{ name: string; path: string }[]>

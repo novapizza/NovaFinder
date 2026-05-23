@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { usePaneStore, type SortKey } from '../../store/paneStore'
 import { useDirectory } from './useDirectory'
 import { FileRow } from './FileRow'
@@ -306,8 +307,18 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
     const paths = pane.selection.includes(entry.path) && pane.selection.length > 0
       ? pane.selection
       : [entry.path]
+    // Keep the legacy in-app payload so existing dragover/drop handlers
+    // that check this MIME type still fire. The startDrag call below
+    // promotes the gesture to a system-level drag so users can drop
+    // into Finder, Mail, Slack, VS Code, etc.
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('application/x-novafinder-paths', JSON.stringify(paths))
+    // Fire-and-forget: startDrag must be invoked synchronously with the
+    // user gesture but the IPC roundtrip is non-blocking from our side.
+    window.fs.startDrag(paths).catch(() => {
+      // If startDrag fails (icon issues, etc.) the HTML5 drag we already
+      // set up remains usable for in-app drops, just no external target.
+    })
   }
 
   async function handleDropOnFolder(folderPath: string, sources: string[]) {
@@ -407,6 +418,20 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
     window.addEventListener('mouseup', onUp)
   }
 
+  // Row virtualization for list view. Without this, mounting 1000+
+  // FileRow components on first paint takes 500ms–1s. The virtualizer
+  // only renders rows in the viewport (+ a small overscan buffer), so
+  // a 10k-entry folder renders in the same time as a 50-entry one.
+  const ROW_HEIGHT = 34
+  const VIRT_THRESHOLD = 80 // skip virtualization for small lists
+  const useVirt = viewMode === 'list' && sorted.length > VIRT_THRESHOLD
+  const rowVirtualizer = useVirtualizer({
+    count: useVirt ? sorted.length : 0,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 10,
+  })
+
   if (viewMode === 'column' && !isVirtualMode) {
     return (
       <ColumnView
@@ -461,7 +486,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
                 onCancel={() => setPendingNew(null)}
               />
             )}
-            {!error && sorted.map((entry) => (
+            {!error && !useVirt && sorted.map((entry) => (
               <FileRow
                 key={entry.path}
                 entry={entry}
@@ -477,6 +502,46 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
                 onDropOnFolder={handleDropOnFolder}
               />
             ))}
+            {!error && useVirt && (
+              <div
+                style={{
+                  height: rowVirtualizer.getTotalSize(),
+                  position: 'relative',
+                  width: '100%',
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((vi) => {
+                  const entry = sorted[vi.index]
+                  return (
+                    <div
+                      key={entry.path}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: vi.size,
+                        transform: `translateY(${vi.start}px)`,
+                      }}
+                    >
+                      <FileRow
+                        entry={entry}
+                        selected={pane.selection.includes(entry.path)}
+                        onSelect={handleSelect}
+                        onOpen={handleOpen}
+                        onRename={handleRename}
+                        onContextMenu={handleContextMenu}
+                        startInEdit={renamingPath === entry.path}
+                        onEditDone={() => setRenamingPath(null)}
+                        gitStatus={gitStatus[entry.name]}
+                        onDragStartItem={handleDragStartItem}
+                        onDropOnFolder={handleDropOnFolder}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </>
         )}
 

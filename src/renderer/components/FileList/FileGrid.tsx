@@ -6,6 +6,7 @@ import { useClipboardStore } from '../../store/clipboardStore'
 import { FileIcon } from '../FileIcon'
 import { TagDots } from '../TagDots'
 import { useTagStore, EMPTY_TAGS } from '../../store/tagStore'
+import { readDropPaths } from '../../lib/dragdrop'
 
 type PendingNew = { type: 'folder' | 'file' }
 
@@ -142,7 +143,9 @@ function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, 
       onDragOver={(e) => {
         if (!entry.isDirectory) return
         const types = Array.from(e.dataTransfer.types)
-        if (!types.includes('application/x-novafinder-paths')) return
+        // Accept both our legacy JSON payload and native Files drags
+        // (the latter is the new default once startDrag took over).
+        if (!types.includes('application/x-novafinder-paths') && !types.includes('Files')) return
         e.preventDefault()
         e.dataTransfer.dropEffect = 'move'
         if (!dropActive) setDropActive(true)
@@ -150,14 +153,10 @@ function GridTile({ entry, selected, onSelect, onOpen, onRename, onContextMenu, 
       onDragLeave={() => setDropActive(false)}
       onDrop={(e) => {
         if (!entry.isDirectory) return
-        const raw = e.dataTransfer.getData('application/x-novafinder-paths')
         setDropActive(false)
-        if (!raw) return
         e.preventDefault()
-        try {
-          const paths: string[] = JSON.parse(raw)
-          onDropOnFolder?.(entry.path, paths)
-        } catch {}
+        const paths = readDropPaths(e)
+        if (paths.length) onDropOnFolder?.(entry.path, paths)
       }}
       onClick={(e) => onSelect(entry.path, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
       onDoubleClick={() => onOpen(entry)}

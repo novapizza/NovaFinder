@@ -3,7 +3,10 @@ import { isImageExt, isVideoExt, isPdfExt, isHtmlPreviewExt, isTextExt } from '.
 import { ImagePreview } from './ImagePreview'
 import { VideoPreview } from './VideoPreview'
 import { TextPreview } from './TextPreview'
+import { ZipPreview } from './ZipPreview'
 import { MetaInfo } from './MetaInfo'
+
+const ARCHIVE_EXTS = new Set(['zip', 'jar', 'war', 'apk', 'ipa'])
 
 // Heavy preview deps (pdfjs-dist ~37MB, marked, react-markdown, mermaid) load only when first used.
 const PdfPreview = lazy(() => import('./PdfPreview').then((m) => ({ default: m.PdfPreview })))
@@ -28,6 +31,7 @@ type Props = {
 }
 
 export function PreviewPanel({ filePath, ext }: Props) {
+  const isArchive = ARCHIVE_EXTS.has(ext.toLowerCase())
   if (!filePath) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 p-6 text-center select-none">
@@ -59,10 +63,11 @@ export function PreviewPanel({ filePath, ext }: Props) {
           <HtmlPreview filePath={filePath} ext={ext} />
         </Suspense>
       )}
-      {isTextExt(ext) && !isImageExt(ext) && !isVideoExt(ext) && !isPdfExt(ext) && !isHtmlPreviewExt(ext) && (
+      {isArchive && <ZipPreview filePath={filePath} />}
+      {isTextExt(ext) && !isImageExt(ext) && !isVideoExt(ext) && !isPdfExt(ext) && !isHtmlPreviewExt(ext) && !isArchive && (
         <TextPreview filePath={filePath} />
       )}
-      {!isImageExt(ext) && !isVideoExt(ext) && !isPdfExt(ext) && !isHtmlPreviewExt(ext) && !isTextExt(ext) && (
+      {!isImageExt(ext) && !isVideoExt(ext) && !isPdfExt(ext) && !isHtmlPreviewExt(ext) && !isTextExt(ext) && !isArchive && (
         <div className="flex flex-col flex-1 items-center justify-center gap-2 text-muted-foreground text-sm">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-2 ring-1 ring-border/60">
             <FileIcon />

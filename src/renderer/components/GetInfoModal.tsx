@@ -8,6 +8,8 @@ type Props = {
   onClose: () => void
 }
 
+type FolderSize = { size: number; files: number; folders: number }
+
 export function GetInfoModal({ filePath, onClose }: Props) {
   const [info, setInfo] = useState<{
     size: number
@@ -16,8 +18,12 @@ export function GetInfoModal({ filePath, onClose }: Props) {
     isDirectory: boolean
     childCount?: number
   } | null>(null)
+  // Folder size is computed only on demand because the walk can be slow
+  // on big trees. null = idle, 'loading' = in progress, FolderSize = done.
+  const [folderSize, setFolderSize] = useState<FolderSize | 'loading' | null>(null)
 
   useEffect(() => {
+    let cancelled = false
     async function load() {
       const stat = await window.fs.stat(filePath)
       let childCount: number | undefined
@@ -27,9 +33,23 @@ export function GetInfoModal({ filePath, onClose }: Props) {
           childCount = entries.length
         } catch {}
       }
+      if (cancelled) return
       setInfo({ ...stat, childCount })
+      // Auto-calculate folder size in the background. Walk runs in the
+      // main process so the UI stays responsive; if it returns fast the
+      // user never sees the "Calculating…" placeholder.
+      if (stat.isDirectory) {
+        setFolderSize('loading')
+        try {
+          const r = await window.fs.folderSize(filePath)
+          if (!cancelled) setFolderSize(r)
+        } catch {
+          if (!cancelled) setFolderSize(null)
+        }
+      }
     }
     load()
+    return () => { cancelled = true }
   }, [filePath])
 
   useEffect(() => {
@@ -40,6 +60,11 @@ export function GetInfoModal({ filePath, onClose }: Props) {
 
   const name = path.basename(filePath)
   const ext = path.extname(filePath).toLowerCase().slice(1)
+  const sizeLine = info && (info.isDirectory
+    ? (folderSize && folderSize !== 'loading'
+        ? `${formatSize(folderSize.size)} · ${folderSize.files.toLocaleString()} files, ${folderSize.folders.toLocaleString()} folders`
+        : (info.childCount !== undefined ? `${info.childCount} items` : 'Folder'))
+    : formatSize(info.size))
 
   return (
     <div
@@ -47,7 +72,7 @@ export function GetInfoModal({ filePath, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="bg-[var(--bg)] border border-[var(--border-color)] rounded-lg shadow-2xl w-[340px] overflow-hidden"
+        className="bg-[var(--bg)] border border-[var(--border-color)] rounded-lg shadow-2xl w-[360px] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-4 py-4 border-b border-[var(--border-color)]">
@@ -57,11 +82,7 @@ export function GetInfoModal({ filePath, onClose }: Props) {
           <div className="flex-1 min-w-0">
             <div className="text-[13px] font-semibold text-[var(--text)] truncate">{name}</div>
             {info && (
-              <div className="text-[11px] text-[var(--text-muted)]">
-                {info.isDirectory
-                  ? (info.childCount !== undefined ? `${info.childCount} items` : 'Folder')
-                  : formatSize(info.size)}
-              </div>
+              <div className="text-[11px] text-[var(--text-muted)]">{sizeLine}</div>
             )}
           </div>
         </div>
@@ -69,6 +90,18 @@ export function GetInfoModal({ filePath, onClose }: Props) {
         <div className="px-4 py-3 text-[12px] text-[var(--text)] space-y-1.5">
           <Row label="Kind" value={info?.isDirectory ? 'Folder' : (ext ? `${ext.toUpperCase()} document` : 'Document')} />
           {info && !info.isDirectory && <Row label="Size" value={formatSize(info.size)} />}
+          {info?.isDirectory && (
+            <Row label="Size">
+              {folderSize && folderSize !== 'loading' ? (
+                <span>{formatSize(folderSize.size)}</span>
+              ) : (
+                <span className="text-[var(--text-muted)]">Calculating…</span>
+              )}
+            </Row>
+          )}
+          {info?.isDirectory && folderSize && folderSize !== 'loading' && (
+            <Row label="Contains" value={`${folderSize.files.toLocaleString()} files, ${folderSize.folders.toLocaleString()} folders`} />
+          )}
           <Row label="Where" value={path.dirname(filePath)} mono />
           {info && <Row label="Created" value={formatDate(info.created)} />}
           {info && <Row label="Modified" value={formatDate(info.modified)} />}
@@ -87,11 +120,13 @@ export function GetInfoModal({ filePath, onClose }: Props) {
   )
 }
 
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Row({ label, value, mono, children }: { label: string; value?: string; mono?: boolean; children?: React.ReactNode }) {
   return (
-    <div className="flex gap-2">
-      <div className="w-16 text-right text-[var(--text-muted)] flex-shrink-0">{label}:</div>
-      <div className={`flex-1 break-all ${mono ? 'font-mono text-[11px]' : ''}`}>{value}</div>
+    <div className="flex gap-2 items-baseline">
+      <div className="w-20 text-right text-[var(--text-muted)] flex-shrink-0">{label}:</div>
+      <div className={`flex-1 break-all ${mono ? 'font-mono text-[11px]' : ''}`}>
+        {children ?? value}
+      </div>
     </div>
   )
 }
