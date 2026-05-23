@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useSettingsStore } from './settingsStore'
 
 export type SortKey = 'name' | 'size' | 'modified' | 'kind'
 export type SortDir = 'asc' | 'desc'
@@ -49,6 +50,9 @@ let _tabSeq = 0
 function nextTabId(): string { _tabSeq += 1; return `t${_tabSeq}` }
 
 function makeTab(p: string): Tab {
+  // Seed new tabs from the persisted defaults so the user's last-chosen
+  // sort survives app restarts and applies to fresh panes/tabs.
+  const s = useSettingsStore.getState()
   return {
     id: nextTabId(),
     path: p,
@@ -56,8 +60,8 @@ function makeTab(p: string): Tab {
     lastSelected: null,
     history: [p],
     historyIndex: 0,
-    sortKey: 'name',
-    sortDir: 'asc',
+    sortKey: s.defaultSortKey,
+    sortDir: s.defaultSortDir,
     tagFilter: null,
   }
 }
@@ -148,7 +152,18 @@ export const usePaneStore = create<PaneStore>((set) => {
 
     setSort: (id, key) =>
       set((s) => writeActive(s, id, (cur) => {
-        const dir: SortDir = cur.sortKey === key && cur.sortDir === 'asc' ? 'desc' : 'asc'
+        // Each key has a "natural" default direction — bigger/newer first
+        // for numeric keys, A→Z for string keys. Picking a new column
+        // applies that default; re-clicking the same column toggles.
+        const naturalDir: SortDir = key === 'modified' || key === 'size' ? 'desc' : 'asc'
+        const dir: SortDir = cur.sortKey === key
+          ? (cur.sortDir === 'asc' ? 'desc' : 'asc')
+          : naturalDir
+        // Persist as the new default so the next pane / next session
+        // opens with the same sort.
+        const settings = useSettingsStore.getState()
+        settings.set('defaultSortKey', key)
+        settings.set('defaultSortDir', dir)
         return { ...cur, sortKey: key, sortDir: dir }
       })),
 

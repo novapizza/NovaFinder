@@ -128,11 +128,21 @@ describe('paneStore', () => {
   })
 
   describe('setSort', () => {
-    it('sets the sort key and defaults to asc', () => {
+    it('size defaults to desc (biggest first) on a fresh pick', () => {
       usePaneStore.getState().setSort('left', 'size')
       const pane = usePaneStore.getState().panes.left
       expect(pane.sortKey).toBe('size')
-      expect(pane.sortDir).toBe('asc')
+      expect(pane.sortDir).toBe('desc')
+    })
+
+    it('modified defaults to desc (newest first) on a fresh pick', () => {
+      usePaneStore.getState().setSort('left', 'modified')
+      expect(usePaneStore.getState().panes.left.sortDir).toBe('desc')
+    })
+
+    it('name and kind default to asc (A→Z) on a fresh pick', () => {
+      usePaneStore.getState().setSort('left', 'kind')
+      expect(usePaneStore.getState().panes.left.sortDir).toBe('asc')
     })
 
     it('toggles to desc when the same key is selected while already asc', () => {
@@ -141,9 +151,11 @@ describe('paneStore', () => {
       expect(usePaneStore.getState().panes.left.sortDir).toBe('desc')
     })
 
-    it('resets to asc when switching to a different key', () => {
+    it('switching to a different key applies that key’s natural direction', () => {
       usePaneStore.getState().setSort('left', 'name') // name, asc → name, desc
-      usePaneStore.getState().setSort('left', 'modified') // different key → asc
+      usePaneStore.getState().setSort('left', 'modified') // desc (newest first)
+      expect(usePaneStore.getState().panes.left.sortDir).toBe('desc')
+      usePaneStore.getState().setSort('left', 'kind') // asc (A→Z)
       expect(usePaneStore.getState().panes.left.sortDir).toBe('asc')
     })
   })

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { SortKey, SortDir } from './paneStore'
 
 const KEY = 'nova_settings'
 
@@ -9,11 +10,18 @@ type Settings = {
   // App name passed to `open -a <name>` when launching a folder in a
   // terminal. Empty string falls back to macOS's stock Terminal.app.
   terminalApp: string
+  // Last sort the user picked, applied to new panes / next session.
+  // Defaults match the natural-direction rule from setSort: newest
+  // modified first.
+  defaultSortKey: SortKey
+  defaultSortDir: SortDir
 }
 
 const DEFAULTS: Settings = {
   windowsStyleSort: true,
   terminalApp: '',
+  defaultSortKey: 'modified',
+  defaultSortDir: 'desc',
 }
 
 function load(): Settings {
@@ -26,6 +34,17 @@ function load(): Settings {
   }
 }
 
+function persist(s: Settings) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify({
+      windowsStyleSort: s.windowsStyleSort,
+      terminalApp: s.terminalApp,
+      defaultSortKey: s.defaultSortKey,
+      defaultSortDir: s.defaultSortDir,
+    }))
+  } catch {}
+}
+
 type State = Settings & {
   set: <K extends keyof Settings>(k: K, v: Settings[K]) => void
 }
@@ -34,12 +53,7 @@ export const useSettingsStore = create<State>((set) => ({
   ...load(),
   set: (k, v) => set((s) => {
     const next = { ...s, [k]: v }
-    try {
-      localStorage.setItem(KEY, JSON.stringify({
-        windowsStyleSort: next.windowsStyleSort,
-        terminalApp: next.terminalApp,
-      }))
-    } catch {}
+    persist(next)
     return next
   }),
 }))

@@ -74,6 +74,19 @@ describe('sortEntries', () => {
       const result = sortEntries(input, 'modified', 'asc')
       expect(result.map((e) => e.modified)).toEqual([1000, 2000, 3000])
     })
+
+    it('puts files above folders regardless of the foldersFirst setting', () => {
+      // "Recently modified" is almost always a file the user just edited;
+      // folders bubbling to the top would defeat the purpose, so this
+      // column overrides foldersFirst.
+      const folder = entry({ name: 'recent-folder', isDirectory: true, modified: 5000 })
+      const oldFile = file('older.txt', 0, 1000)
+      const newFile = file('newer.txt', 0, 9000)
+      const result = sortEntries([folder, oldFile, newFile], 'modified', 'desc', { foldersFirst: true })
+      expect(result[0]).toBe(newFile)
+      expect(result[1]).toBe(oldFile)
+      expect(result[2]).toBe(folder)
+    })
   })
 
   describe('sort by kind', () => {

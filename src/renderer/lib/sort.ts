@@ -15,8 +15,14 @@ export function sortEntries(
 ): FileEntry[] {
   const { foldersFirst = true } = options
   const mult = dir === 'asc' ? 1 : -1
+  // When sorting by Modified, the user almost always wants the file they
+  // just touched at the top — directories grouped above would defeat that.
+  // So invert: files first, folders below. This overrides foldersFirst
+  // for this column only.
+  const filesFirst = key === 'modified'
   const sorted = [...entries].sort((a, b) => {
-    if (foldersFirst && a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1
+    if (filesFirst && a.isDirectory !== b.isDirectory) return a.isDirectory ? 1 : -1
+    if (!filesFirst && foldersFirst && a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1
 
     switch (key) {
       case 'name':

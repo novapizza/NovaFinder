@@ -145,9 +145,19 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   }, [entries, pane.sortKey, pane.sortDir, isSearching, searchResults, pane.tagFilter, tagMap, foldersFirst])
 
   useEffect(() => {
-    window.fs.homedir().then((home) => {
-      if (pane.path === '/') navigateTo(paneId, home)
-    })
+    // Match Finder's factory default: open Recents on first launch.
+    // If Recents is empty (brand-new install), fall back to ~/Downloads
+    // so the user sees real files instead of a blank screen. Only
+    // redirects from the bootstrap path '/' so navigated tabs aren't
+    // yanked back on every render.
+    if (pane.path !== '/') return
+    if (recentEntries.length > 0) {
+      navigateTo(paneId, RECENTS_PATH)
+    } else {
+      window.fs.specialPaths().then((sp) => {
+        navigateTo(paneId, sp.downloads || sp.home)
+      })
+    }
   }, [])
 
   useEffect(() => { registerReload?.(reloadAll) }, [reload, isSmartMode, isTagMode, pane.path])
