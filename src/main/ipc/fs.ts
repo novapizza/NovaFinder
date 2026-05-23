@@ -76,6 +76,66 @@ export function registerFsHandlers() {
     }
   })
 
+  // Streaming readdir for big folders. Returns name + isDirectory + ext
+  // immediately (no stat — sub-50ms even on 10k entries) so the UI can
+  // render names instantly, then pushes stat batches via 'fs:readdir:stats'
+  // events keyed by requestId so size/modified backfill as the user reads.
+  ipcMain.handle('fs:readdir:stream', async (e, requestId: number, dirPath: string, showHidden = false) => {
+    let entries: fsSync.Dirent[]
+    try {
+      entries = await fs.readdir(dirPath, { withFileTypes: true })
+    } catch (err: any) {
+      if (err?.code === 'EPERM' || err?.code === 'EACCES') {
+        const perm = new Error(`PERMISSION_DENIED: ${dirPath}`) as Error & { code: string }
+        perm.code = 'PERMISSION_DENIED'
+        throw perm
+      }
+      throw err
+    }
+    const filtered = showHidden ? entries : entries.filter((e) => !e.name.startsWith('.'))
+    const lite: FileEntry[] = filtered.map((entry) => {
+      const fullPath = path.join(dirPath, entry.name)
+      const isDirectory = entry.isDirectory()
+      return {
+        name: entry.name,
+        path: fullPath,
+        isDirectory,
+        size: 0,
+        modified: 0,
+        ext: isDirectory ? '' : path.extname(entry.name).toLowerCase().slice(1),
+      }
+    })
+    lite.sort((a, b) => {
+      if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+    })
+
+    // Schedule stat batches AFTER the response is sent. setImmediate lets
+    // the lite list reach the renderer first, then we fan out stats so
+    // the user sees something during the (smaller) follow-up work.
+    const sender = e.sender
+    setImmediate(async () => {
+      const CHUNK = 250
+      for (let i = 0; i < lite.length; i += CHUNK) {
+        if (sender.isDestroyed()) return
+        const slice = lite.slice(i, i + CHUNK)
+        const results = await Promise.all(slice.map(async (it) => {
+          try {
+            const st = await fs.stat(it.path)
+            return { path: it.path, size: st.size, modified: st.mtimeMs }
+          } catch { return null }
+        }))
+        const batch = results.filter((r): r is { path: string; size: number; modified: number } => r !== null)
+        if (batch.length && !sender.isDestroyed()) {
+          sender.send('fs:readdir:stats', requestId, batch)
+        }
+      }
+      if (!sender.isDestroyed()) sender.send('fs:readdir:done', requestId)
+    })
+
+    return lite
+  })
+
   ipcMain.handle('fs:stat', async (_e, filePath: string) => {
     const stat = await fs.stat(filePath)
     return {

@@ -16,8 +16,42 @@ export type SpecialPaths = {
   icloud: string
 }
 
+// Streaming readdir: caller registers callbacks for the stat batches /
+// completion event, gets back the lite entries via promise. Each call
+// gets its own requestId so concurrent reads (left + right pane) don't
+// trample each other.
+let _nextReadStreamId = 1
+const _readStatsListeners = new Map<number, (batch: { path: string; size: number; modified: number }[]) => void>()
+const _readDoneListeners = new Map<number, () => void>()
+ipcRenderer.on('fs:readdir:stats', (_e, requestId: number, batch: { path: string; size: number; modified: number }[]) => {
+  _readStatsListeners.get(requestId)?.(batch)
+})
+ipcRenderer.on('fs:readdir:done', (_e, requestId: number) => {
+  _readDoneListeners.get(requestId)?.()
+  _readStatsListeners.delete(requestId)
+  _readDoneListeners.delete(requestId)
+})
+
 contextBridge.exposeInMainWorld('fs', {
   readdir: (p: string, showHidden?: boolean) => ipcRenderer.invoke('fs:readdir', p, showHidden),
+  readdirStream: (
+    p: string,
+    showHidden: boolean | undefined,
+    onStats: (batch: { path: string; size: number; modified: number }[]) => void,
+    onDone?: () => void,
+  ) => {
+    const requestId = _nextReadStreamId++
+    _readStatsListeners.set(requestId, onStats)
+    if (onDone) _readDoneListeners.set(requestId, onDone)
+    const cleanup = () => {
+      _readStatsListeners.delete(requestId)
+      _readDoneListeners.delete(requestId)
+    }
+    return {
+      promise: ipcRenderer.invoke('fs:readdir:stream', requestId, p, showHidden),
+      cancel: cleanup,
+    }
+  },
   readdirsOnly: (p: string) => ipcRenderer.invoke('fs:readdirsOnly', p),
   stat: (p: string) => ipcRenderer.invoke('fs:stat', p),
   statBatch: (paths: string[]) => ipcRenderer.invoke('fs:statBatch', paths),
@@ -81,6 +115,12 @@ declare global {
   interface Window {
     fs: {
       readdir(p: string, showHidden?: boolean): Promise<FileEntry[]>
+      readdirStream(
+        p: string,
+        showHidden: boolean | undefined,
+        onStats: (batch: { path: string; size: number; modified: number }[]) => void,
+        onDone?: () => void,
+      ): { promise: Promise<FileEntry[]>; cancel: () => void }
       readdirsOnly(p: string): Promise<FileEntry[]>
       stat(p: string): Promise<{ size: number; modified: number; created: number; isDirectory: boolean }>
       statBatch(paths: string[]): Promise<FileEntry[]>
