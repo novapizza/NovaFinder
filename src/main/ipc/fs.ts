@@ -434,7 +434,12 @@ export function registerFsHandlers() {
   })
 
   ipcMain.handle('fs:exists', async (_e, filePath: string) => {
-    return fsSync.existsSync(filePath)
+    try {
+      await fs.access(filePath)
+      return true
+    } catch {
+      return false
+    }
   })
 
   ipcMain.handle('fs:readdirsOnly', async (_e, dirPath: string) => {
@@ -464,7 +469,12 @@ export function registerFsHandlers() {
     const baseName = names.length === 1 ? names[0] : 'Archive'
     let archiveName = `${baseName}.zip`
     let count = 2
-    while (fsSync.existsSync(path.join(dir, archiveName))) {
+    // Async existence check so we don't block the event loop while
+    // probing for a free filename on slow volumes (NFS, encrypted DMG, …).
+    const existsAsync = async (p: string) => {
+      try { await fs.access(p); return true } catch { return false }
+    }
+    while (await existsAsync(path.join(dir, archiveName))) {
       archiveName = `${baseName} ${count}.zip`
       count++
     }

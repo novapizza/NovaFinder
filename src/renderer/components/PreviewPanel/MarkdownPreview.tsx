@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
@@ -10,42 +10,49 @@ const REHYPE_PLUGINS: [typeof rehypeHighlight, { detect: boolean; ignoreMissing:
   [rehypeHighlight, { detect: true, ignoreMissing: true }],
 ]
 
-// Stable components prop so MermaidBlock instances aren't remounted on every render.
+// merslim ships a drop-in `<DiagramRenderer source={code} />` that handles
+// parse + layout + SVG. Lazy import so the 1MB+ of diagram code only
+// loads when a markdown file actually has a ```mermaid block.
+//
+// bootstrapDiagramRenderers() has to be called once before any
+// DiagramRenderer mounts — otherwise the registry is empty and every
+// diagram type fails with "No renderer registered for <type>". We
+// fire it on first import so all subsequent mounts find what they need.
+const DiagramRenderer = lazy(() =>
+  import('merslim').then((m) => {
+    m.bootstrapDiagramRenderers?.()
+    return { default: m.DiagramRenderer }
+  }),
+)
+
+// Stable components prop so DiagramBlock instances aren't remounted on every render.
 const MARKDOWN_COMPONENTS = {
   code({ className, children }: { className?: string; children?: React.ReactNode }) {
     const lang = /language-(\w+)/.exec(className || '')?.[1]
     const code = String(children).replace(/\n$/, '')
-    if (lang === 'mermaid') return <MermaidBlock code={code} />
+    if (lang === 'mermaid') return <DiagramBlock code={code} />
     return <code className={className}>{children}</code>
   },
 }
 
-function MermaidBlock({ code }: { code: string }) {
-  const [svg, setSvg] = useState<string | null>(null)
+function DiagramBlock({ code }: { code: string }) {
   const [error, setError] = useState<string | null>(null)
-  const idRef = useRef(`m-${Math.random().toString(36).slice(2, 10)}`)
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        const { default: mermaid } = await import('mermaid')
-        const isDark = document.documentElement.classList.contains('dark')
-        mermaid.initialize({ startOnLoad: false, theme: isDark ? 'dark' : 'default', securityLevel: 'loose' })
-        const { svg } = await mermaid.render(idRef.current, code)
-        if (!cancelled) { setSvg(svg); setError(null) }
-      } catch (e: unknown) {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e))
-      }
-    })()
-    return () => { cancelled = true }
-  }, [code])
+  const isDark = document.documentElement.classList.contains('dark')
 
   if (error) {
-    return <div className="my-3 p-2 rounded border border-destructive/40 bg-destructive/10 text-destructive text-xs font-mono">Mermaid error: {error}</div>
+    return (
+      <div className="my-3 p-2 rounded border border-destructive/40 bg-destructive/10 text-destructive text-xs font-mono">
+        Diagram error: {error}
+      </div>
+    )
   }
-  if (!svg) return <div className="my-3 text-xs text-muted-foreground">Rendering diagram…</div>
-  return <div className="my-3 flex justify-center overflow-x-auto" dangerouslySetInnerHTML={{ __html: svg }} />
+  return (
+    <div className="my-3 flex justify-center overflow-x-auto">
+      <Suspense fallback={<div className="text-xs text-muted-foreground">Rendering diagram…</div>}>
+        <DiagramRenderer source={code} dark={isDark} onError={(e) => setError(String(e))} />
+      </Suspense>
+    </div>
+  )
 }
 
 export function MarkdownPreview({ filePath }: Props) {
