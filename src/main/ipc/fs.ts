@@ -11,6 +11,7 @@ export type FileEntry = {
   isDirectory: boolean
   size: number
   modified: number
+  created: number
   ext: string
 }
 
@@ -34,7 +35,7 @@ async function readdir(dirPath: string, showHidden = false): Promise<FileEntry[]
         // runs in parallel with all the other ones so it's fine.
         try {
           const stat = await fs.stat(fullPath)
-          return { name: entry.name, path: fullPath, isDirectory: true, size: 0, modified: stat.mtimeMs, ext: '' }
+          return { name: entry.name, path: fullPath, isDirectory: true, size: 0, modified: stat.mtimeMs, created: stat.birthtimeMs, ext: '' }
         } catch {
           return null
         }
@@ -47,6 +48,7 @@ async function readdir(dirPath: string, showHidden = false): Promise<FileEntry[]
           isDirectory: false,
           size: stat.size,
           modified: stat.mtimeMs,
+          created: stat.birthtimeMs,
           ext,
         }
       } catch {
@@ -102,6 +104,7 @@ export function registerFsHandlers() {
         isDirectory,
         size: 0,
         modified: 0,
+        created: 0,
         ext: isDirectory ? '' : path.extname(entry.name).toLowerCase().slice(1),
       }
     })
@@ -122,10 +125,10 @@ export function registerFsHandlers() {
         const results = await Promise.all(slice.map(async (it) => {
           try {
             const st = await fs.stat(it.path)
-            return { path: it.path, size: st.size, modified: st.mtimeMs }
+            return { path: it.path, size: st.size, modified: st.mtimeMs, created: st.birthtimeMs }
           } catch { return null }
         }))
-        const batch = results.filter((r): r is { path: string; size: number; modified: number } => r !== null)
+        const batch = results.filter((r): r is { path: string; size: number; modified: number; created: number } => r !== null)
         if (batch.length && !sender.isDestroyed()) {
           sender.send('fs:readdir:stats', requestId, batch)
         }
@@ -158,6 +161,7 @@ export function registerFsHandlers() {
             isDirectory: stat.isDirectory(),
             size: stat.size,
             modified: stat.mtimeMs,
+            created: stat.birthtimeMs,
             ext: stat.isDirectory() ? '' : (path.extname(name).slice(1).toLowerCase() ?? ''),
           }
         } catch {

@@ -6,6 +6,7 @@ const OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'name', label: 'Name' },
   { key: 'kind', label: 'Kind' },
   { key: 'modified', label: 'Date Modified' },
+  { key: 'created', label: 'Date Created' },
   { key: 'size', label: 'Size' },
 ]
 

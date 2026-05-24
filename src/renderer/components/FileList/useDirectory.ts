@@ -6,6 +6,7 @@ export type FileEntry = {
   isDirectory: boolean
   size: number
   modified: number
+  created: number
   ext: string
 }
 
@@ -44,9 +45,9 @@ export function useDirectory(dirPath: string, showHidden: boolean) {
             const next = prev.map((e) => {
               const s = map.get(e.path)
               if (!s) return e
-              if (e.size === s.size && e.modified === s.modified) return e
+              if (e.size === s.size && e.modified === s.modified && e.created === s.created) return e
               changed = true
-              return { ...e, size: s.size, modified: s.modified }
+              return { ...e, size: s.size, modified: s.modified, created: s.created }
             })
             return changed ? next : prev
           })

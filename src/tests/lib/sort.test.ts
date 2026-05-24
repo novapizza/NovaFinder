@@ -8,6 +8,7 @@ function entry(overrides: Partial<FileEntry> & { name: string }): FileEntry {
     isDirectory: false,
     size: 0,
     modified: 0,
+    created: 0,
     ext: '',
     ...overrides,
   }
@@ -83,6 +84,18 @@ describe('sortEntries', () => {
       const oldFile = file('older.txt', 0, 1000)
       const newFile = file('newer.txt', 0, 9000)
       const result = sortEntries([folder, oldFile, newFile], 'modified', 'desc', { foldersFirst: true })
+      expect(result[0]).toBe(newFile)
+      expect(result[1]).toBe(oldFile)
+      expect(result[2]).toBe(folder)
+    })
+  })
+
+  describe('sort by created', () => {
+    it('sorts desc by birth timestamp and puts files above folders', () => {
+      const folder = entry({ name: 'recent-folder', isDirectory: true, created: 5000 })
+      const oldFile = entry({ name: 'old.txt', created: 1000 })
+      const newFile = entry({ name: 'new.txt', created: 9000 })
+      const result = sortEntries([folder, oldFile, newFile], 'created', 'desc', { foldersFirst: true })
       expect(result[0]).toBe(newFile)
       expect(result[1]).toBe(oldFile)
       expect(result[2]).toBe(folder)

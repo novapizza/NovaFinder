@@ -21,9 +21,9 @@ export type SpecialPaths = {
 // gets its own requestId so concurrent reads (left + right pane) don't
 // trample each other.
 let _nextReadStreamId = 1
-const _readStatsListeners = new Map<number, (batch: { path: string; size: number; modified: number }[]) => void>()
+const _readStatsListeners = new Map<number, (batch: { path: string; size: number; modified: number; created: number }[]) => void>()
 const _readDoneListeners = new Map<number, () => void>()
-ipcRenderer.on('fs:readdir:stats', (_e, requestId: number, batch: { path: string; size: number; modified: number }[]) => {
+ipcRenderer.on('fs:readdir:stats', (_e, requestId: number, batch: { path: string; size: number; modified: number; created: number }[]) => {
   _readStatsListeners.get(requestId)?.(batch)
 })
 ipcRenderer.on('fs:readdir:done', (_e, requestId: number) => {
@@ -37,7 +37,7 @@ contextBridge.exposeInMainWorld('fs', {
   readdirStream: (
     p: string,
     showHidden: boolean | undefined,
-    onStats: (batch: { path: string; size: number; modified: number }[]) => void,
+    onStats: (batch: { path: string; size: number; modified: number; created: number }[]) => void,
     onDone?: () => void,
   ) => {
     const requestId = _nextReadStreamId++
@@ -118,7 +118,7 @@ declare global {
       readdirStream(
         p: string,
         showHidden: boolean | undefined,
-        onStats: (batch: { path: string; size: number; modified: number }[]) => void,
+        onStats: (batch: { path: string; size: number; modified: number; created: number }[]) => void,
         onDone?: () => void,
       ): { promise: Promise<FileEntry[]>; cancel: () => void }
       readdirsOnly(p: string): Promise<FileEntry[]>

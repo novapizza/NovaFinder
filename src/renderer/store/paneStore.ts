@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { useSettingsStore } from './settingsStore'
 
-export type SortKey = 'name' | 'size' | 'modified' | 'kind'
+export type SortKey = 'name' | 'size' | 'modified' | 'created' | 'kind'
 export type SortDir = 'asc' | 'desc'
 export type ViewMode = 'icon' | 'list' | 'column' | 'gallery'
 export type PaneId = 'left' | 'right'
@@ -155,7 +155,7 @@ export const usePaneStore = create<PaneStore>((set) => {
         // Each key has a "natural" default direction — bigger/newer first
         // for numeric keys, A→Z for string keys. Picking a new column
         // applies that default; re-clicking the same column toggles.
-        const naturalDir: SortDir = key === 'modified' || key === 'size' ? 'desc' : 'asc'
+        const naturalDir: SortDir = key === 'modified' || key === 'created' || key === 'size' ? 'desc' : 'asc'
         const dir: SortDir = cur.sortKey === key
           ? (cur.sortDir === 'asc' ? 'desc' : 'asc')
           : naturalDir

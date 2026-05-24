@@ -8,21 +8,22 @@ const mockEntry = (name: string, isDirectory = false): FileEntry => ({
   path: `/tmp/${name}`,
   isDirectory,
   // useDirectory now returns the lite list first (no stat) and merges
-  // size/modified from streamed batches, so tests should start with
-  // zeros and assert on the lite shape unless a batch is simulated.
+  // size/modified/created from streamed batches, so tests should start
+  // with zeros and assert on the lite shape unless a batch is simulated.
   size: 0,
   modified: 0,
+  created: 0,
   ext: isDirectory ? '' : name.split('.').pop() ?? '',
 })
 
 // Simulates the preload streaming bridge. We immediately resolve the
 // lite list and then fire the done callback synchronously so the
 // loading flag flips back to false the way the production wiring does.
-function makeStreamMock(initial: FileEntry[] | Promise<FileEntry[]>, batches: { path: string; size: number; modified: number }[][] = []) {
+function makeStreamMock(initial: FileEntry[] | Promise<FileEntry[]>, batches: { path: string; size: number; modified: number; created: number }[][] = []) {
   return (
     _p: string,
     _showHidden: boolean | undefined,
-    onStats: (b: { path: string; size: number; modified: number }[]) => void,
+    onStats: (b: { path: string; size: number; modified: number; created: number }[]) => void,
     onDone?: () => void,
   ) => {
     const promise = Promise.resolve(initial).then((lite) => {
@@ -69,7 +70,7 @@ describe('useDirectory', () => {
   it('merges stat batches into the lite list as they stream in', async () => {
     const entries = [mockEntry('a.txt')]
     mockFs.readdirStream.mockImplementation(makeStreamMock(entries, [
-      [{ path: '/tmp/a.txt', size: 4096, modified: 1234 }],
+      [{ path: '/tmp/a.txt', size: 4096, modified: 1234, created: 99 }],
     ]))
 
     const { result } = renderHook(() => useDirectory('/tmp', false))

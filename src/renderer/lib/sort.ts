@@ -15,11 +15,11 @@ export function sortEntries(
 ): FileEntry[] {
   const { foldersFirst = true } = options
   const mult = dir === 'asc' ? 1 : -1
-  // When sorting by Modified, the user almost always wants the file they
-  // just touched at the top — directories grouped above would defeat that.
-  // So invert: files first, folders below. This overrides foldersFirst
-  // for this column only.
-  const filesFirst = key === 'modified'
+  // When sorting by Modified or Created, the user almost always wants
+  // the file they just touched / just made at the top — directories
+  // grouped above would defeat that. So invert: files first, folders
+  // below. This overrides foldersFirst for these two columns only.
+  const filesFirst = key === 'modified' || key === 'created'
   const sorted = [...entries].sort((a, b) => {
     if (filesFirst && a.isDirectory !== b.isDirectory) return a.isDirectory ? 1 : -1
     if (!filesFirst && foldersFirst && a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1
@@ -31,6 +31,8 @@ export function sortEntries(
         return (a.size - b.size) * mult
       case 'modified':
         return (a.modified - b.modified) * mult
+      case 'created':
+        return (a.created - b.created) * mult
       case 'kind':
         // Primary by extension, then by name (using the same locale-aware,
         // natural-numeric comparison Finder uses).
