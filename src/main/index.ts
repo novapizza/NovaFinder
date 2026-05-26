@@ -3,6 +3,7 @@ import path from 'path'
 import { registerFsHandlers } from './ipc/fs'
 import { registerWatcherHandlers, stopAllWatchers } from './ipc/watcher'
 import { registerTagsHandlers } from './ipc/tags'
+import { setupUpdater } from './update'
 
 app.setName('NovaFinder')
 
@@ -20,6 +21,10 @@ function buildMenu(win: BrowserWindow) {
               label: 'Settings…',
               accelerator: 'Cmd+,',
               click: () => { win.webContents.send('app:open-settings') },
+            },
+            {
+              label: 'Check for Updates…',
+              click: () => { win.webContents.send('app:check-update') },
             },
             { type: 'separator' as const },
             { role: 'services' as const },
@@ -122,6 +127,7 @@ app.whenReady().then(() => {
   registerFsHandlers()
   registerTagsHandlers()
   createWindow()
+  setupUpdater()
 })
 
 app.on('window-all-closed', () => {

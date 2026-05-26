@@ -1,7 +1,7 @@
 {
   "name": "nova-directory",
   "productName": "NovaFinder",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A powerful Mac file manager",
   "main": "out/main/index.js",
   "scripts": {
@@ -17,8 +17,12 @@
     "e2e": "npm run build && playwright test",
     "e2e:headed": "npm run build && playwright test --headed"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["electron", "esbuild", "electron-winstaller"]
+  },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.25",
+    "electron-updater": "^6.8.3",
     "lucide-react": "^1.11.0",
     "merslim": "^0.2.3",
     "path-browserify": "^1.0.1",

@@ -102,6 +102,20 @@ contextBridge.exposeInMainWorld('fs', {
     ipcRenderer.on('app:open-settings', cb)
     return () => ipcRenderer.removeAllListeners('app:open-settings')
   },
+  onCheckUpdate: (cb: () => void) => {
+    ipcRenderer.on('app:check-update', cb)
+    return () => ipcRenderer.removeAllListeners('app:check-update')
+  },
+})
+
+contextBridge.exposeInMainWorld('update', {
+  onStatus: (cb: (payload: { status: string } & Record<string, unknown>) => void) => {
+    ipcRenderer.on('update:status', (_e, payload) => cb(payload))
+    return () => ipcRenderer.removeAllListeners('update:status')
+  },
+  install: () => ipcRenderer.send('update:install'),
+  check: () => ipcRenderer.send('update:check'),
+  isDownloaded: () => ipcRenderer.invoke('update:available'),
 })
 
 contextBridge.exposeInMainWorld('tags', {
@@ -161,6 +175,13 @@ declare global {
       watchStop(p: string): void
       onWatchEvent(cb: (e: { dirPath: string; eventType: string; filename: string }) => void): () => void
       onOpenSettings(cb: () => void): () => void
+      onCheckUpdate(cb: () => void): () => void
+    }
+    update: {
+      onStatus(cb: (payload: { status: string } & Record<string, unknown>) => void): () => void
+      install(): void
+      check(): void
+      isDownloaded(): Promise<boolean>
     }
     tags: {
       loadAll(): Promise<Record<string, TagColor[]>>

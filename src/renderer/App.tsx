@@ -13,6 +13,7 @@ import { useTheme } from './hooks/useTheme'
 import { usePaneStore } from './store/paneStore'
 import { useFileOps } from './hooks/useFileOps'
 import { PromptModal } from './components/PromptModal'
+import { UpdateNotification } from './components/UpdateNotification'
 import { SettingsModal } from './components/SettingsModal'
 import { useSearchStore } from './store/searchStore'
 import { useSettingsStore } from './store/settingsStore'
@@ -139,6 +140,7 @@ export default function App() {
       {globalInfoPath && <GetInfoModal filePath={globalInfoPath} onClose={() => setGlobalInfoPath(null)} />}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       <PromptModal />
+      <UpdateNotification />
     </div>
   )
 }
