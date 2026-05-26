@@ -59,16 +59,17 @@ export function setupUpdater() {
     autoUpdater.on('error', (err) => push('error', { message: err.message }))
 
     ipcMain.on('update:install', () => autoUpdater.quitAndInstall(true, true))
-    ipcMain.on('update:check', () => autoUpdater.checkForUpdates())
+    ipcMain.on('update:check', () => { autoUpdater.checkForUpdates().catch(() => {}) })
     ipcMain.handle('update:available', () => updateDownloaded)
 
-    const win = getWindow()
-    if (win) {
-      win.on('show', cancelAutoInstall)
-      win.on('hide', () => { if (updateDownloaded) scheduleAutoInstall() })
+    const attachWindowListeners = (w: BrowserWindow) => {
+      w.on('show', cancelAutoInstall)
+      w.on('hide', () => { if (updateDownloaded) scheduleAutoInstall() })
     }
+    BrowserWindow.getAllWindows().forEach(attachWindowListeners)
+    app.on('browser-window-created', (_e, w) => attachWindowListeners(w))
 
-    autoUpdater.checkForUpdates()
-    setInterval(() => autoUpdater.checkForUpdates(), CHECK_INTERVAL_MS)
+    autoUpdater.checkForUpdates().catch(() => {})
+    setInterval(() => { autoUpdater.checkForUpdates().catch(() => {}) }, CHECK_INTERVAL_MS)
   })
 }
