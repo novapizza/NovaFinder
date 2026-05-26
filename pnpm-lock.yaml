@@ -20,9 +20,7 @@ importers:
       merslim:
         specifier: ^0.2.3
         version: 0.2.3(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      nova-directory:
-        specifier: 'link:'
-        version: 'link:'
+
       path-browserify:
         specifier: ^1.0.1
         version: 1.0.1

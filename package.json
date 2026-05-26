@@ -18,7 +18,11 @@
     "e2e:headed": "npm run build && playwright test --headed"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["electron", "esbuild", "electron-winstaller"]
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild",
+      "electron-winstaller"
+    ]
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.25",
