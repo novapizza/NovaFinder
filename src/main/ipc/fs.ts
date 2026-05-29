@@ -1,4 +1,4 @@
-import { ipcMain, shell, clipboard, dialog } from 'electron'
+import { ipcMain, shell, clipboard, dialog, nativeImage, app } from 'electron'
 import fs from 'fs/promises'
 import fsSync from 'fs'
 import path from 'path'
@@ -331,6 +331,25 @@ export function registerFsHandlers() {
     clipboard.writeText(text)
   })
 
+  // Put real file references on the system pasteboard so they can be pasted
+  // into Finder, Mail, Slack, etc. macOS reads the legacy NSFilenamesPboardType
+  // (an XML plist array of POSIX paths). writeBuffer() declares this raw
+  // pasteboard type; clipboard.write({text}) only supports known keys (text,
+  // html, image, rtf, bookmark) and silently drops custom formats, so it
+  // can't be used here.
+  ipcMain.handle('clipboard:writeFiles', (_e, paths: string[]) => {
+    if (!paths.length) return
+    const escape = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const plist =
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n' +
+      '<plist version="1.0">\n<array>\n' +
+      paths.map((p) => `\t<string>${escape(p)}</string>`).join('\n') +
+      '\n</array>\n</plist>'
+    clipboard.writeBuffer('NSFilenamesPboardType', Buffer.from(plist, 'utf8'))
+  })
+
   ipcMain.handle('fs:writeFile', async (_e, filePath: string, content = '') => {
     await fs.writeFile(filePath, content, { flag: 'wx' }) // wx fails if exists
   })
@@ -581,20 +600,47 @@ export function registerFsHandlers() {
   // be called from within a renderer dragstart event for macOS to
   // accept it. The icon is required by the API; we fall back to the
   // app icon when no better thumbnail exists yet.
+  // 16x16 translucent-gray PNG, used only when no real icon can be found,
+  // so startDrag is never handed an empty nativeImage (which hangs macOS).
+  const DRAG_FALLBACK_ICON =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGklEQVR42mOYOXPmGUoww6gBowaMGjBcDAAAvm6XH2QAU/gAAAAASUVORK5CYII='
+
   ipcMain.handle('shell:startDrag', async (e, paths: string[]) => {
     if (!paths || paths.length === 0) return
-    const iconPath = path.join(__dirname, '..', 'renderer', 'icon.png')
-    let icon
+    // macOS hangs (or crashes) if startDrag receives an empty nativeImage,
+    // so we must always resolve a real, non-empty icon.
+    let icon = nativeImage.createEmpty()
+    // Prefer the OS icon for the file type being dragged (the macOS
+    // document/folder/app icon), so the drag cursor matches the file
+    // rather than showing our logo. Use the first dragged item.
     try {
-      const { nativeImage } = await import('electron')
-      icon = nativeImage.createFromPath(iconPath)
-      if (icon.isEmpty()) {
-        // Fallback to project icon
-        icon = nativeImage.createFromPath(path.join(process.resourcesPath ?? '', 'icon.png'))
-      }
+      // Use the OS file-type icon at 'normal' size. NOTE: 'large' and any
+      // resize() of this image crash startDrag on macOS (the multi-
+      // representation Retina NSImage it returns is rejected by the drag
+      // session), so we pass it through untouched.
+      const fileIcon = await app.getFileIcon(paths[0], { size: 'normal' })
+      if (!fileIcon.isEmpty()) icon = fileIcon
     } catch {
-      const { nativeImage } = await import('electron')
-      icon = nativeImage.createEmpty()
+      // getFileIcon can reject for missing/inaccessible paths — fall through.
+    }
+    // Fall back to the app icon, then a tiny embedded placeholder, so the
+    // image is never empty.
+    if (icon.isEmpty()) {
+      const candidates = [
+        path.join(process.resourcesPath ?? '', 'icon.png'), // packaged (extraResources)
+        path.join(app.getAppPath(), 'assets', 'icon.png'),  // dev (project root)
+      ]
+      for (const c of candidates) {
+        const img = nativeImage.createFromPath(c)
+        if (!img.isEmpty()) {
+          icon = img.resize({ width: 64, height: 64 })
+          break
+        }
+      }
+    }
+    if (icon.isEmpty()) {
+      // Last-resort 16x16 placeholder so we never pass an empty image.
+      icon = nativeImage.createFromDataURL(DRAG_FALLBACK_ICON)
     }
     e.sender.startDrag({
       files: paths,

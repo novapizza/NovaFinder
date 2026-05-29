@@ -18,6 +18,9 @@ export function useFileOps(onReload?: (removedPaths?: string[]) => void) {
   async function copy(paths: string[]) {
     setCopy(paths)
     setSelection(activePaneId, paths)
+    // Also place real file refs on the system clipboard so they can be pasted
+    // into Finder and other apps, not just within NovaDirectory.
+    window.fs.writeClipboardFiles(paths).catch(() => {})
   }
 
   // Build a name that doesn't collide: "file.txt" → "file 2.txt", "file 3.txt", etc.

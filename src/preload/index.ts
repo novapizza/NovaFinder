@@ -75,6 +75,7 @@ contextBridge.exposeInMainWorld('fs', {
   openPrivacySettings: () => ipcRenderer.invoke('shell:openPrivacySettings'),
   openAppleIdSettings: () => ipcRenderer.invoke('shell:openAppleIdSettings'),
   writeClipboardText: (text: string) => ipcRenderer.invoke('clipboard:writeText', text),
+  writeClipboardFiles: (paths: string[]) => ipcRenderer.invoke('clipboard:writeFiles', paths),
   writeFile: (p: string, content?: string) => ipcRenderer.invoke('fs:writeFile', p, content),
   searchRecursive: (dir: string, query: string, mode: 'name' | 'content' | 'kind' | 'size') =>
     ipcRenderer.invoke('fs:searchRecursive', dir, query, mode),
@@ -158,6 +159,7 @@ declare global {
       openPrivacySettings(): Promise<void>
       openAppleIdSettings(): Promise<void>
       writeClipboardText(text: string): Promise<void>
+      writeClipboardFiles(paths: string[]): Promise<void>
       writeFile(p: string, content?: string): Promise<void>
       searchRecursive(dir: string, query: string, mode: 'name' | 'content' | 'kind' | 'size'): Promise<FileEntry[]>
       zip(filePaths: string[]): Promise<string>

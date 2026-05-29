@@ -320,17 +320,17 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
     const paths = pane.selection.includes(entry.path) && pane.selection.length > 0
       ? pane.selection
       : [entry.path]
-    // Keep the legacy in-app payload so existing dragover/drop handlers
-    // that check this MIME type still fire. The startDrag call below
-    // promotes the gesture to a system-level drag so users can drop
-    // into Finder, Mail, Slack, VS Code, etc.
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('application/x-novafinder-paths', JSON.stringify(paths))
-    // Fire-and-forget: startDrag must be invoked synchronously with the
-    // user gesture but the IPC roundtrip is non-blocking from our side.
+    // Cancel the HTML5 drag entirely. Running an HTML5 drag and a native
+    // startDrag at the same time spins up two nested run loops on macOS
+    // that deadlock each other, hanging the whole app. We rely solely on
+    // the native drag below: it can drop into Finder, Mail, Slack, VS
+    // Code, etc., AND still fires dragover/drop (with the "Files" type)
+    // for our own folder dropzones, so in-app moves keep working.
+    e.preventDefault()
+    // Fire-and-forget: the IPC roundtrip is non-blocking from our side.
+    // macOS re-initiates the drag from the current mouse state.
     window.fs.startDrag(paths).catch(() => {
-      // If startDrag fails (icon issues, etc.) the HTML5 drag we already
-      // set up remains usable for in-app drops, just no external target.
+      // startDrag failed (icon/permission issue) — nothing to drag.
     })
   }
 
