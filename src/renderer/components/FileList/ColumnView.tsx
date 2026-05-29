@@ -7,6 +7,8 @@ import { sortEntries } from '../../lib/sort'
 import { useSettingsStore } from '../../store/settingsStore'
 import { useFileMenu } from '../../hooks/useFileMenu'
 
+const COLUMN_DEFAULT_WIDTH = 240
+
 type Props = {
   paneId: 'left' | 'right'
   onPreview: (path: string, ext: string) => void
@@ -20,6 +22,10 @@ export function ColumnView({ paneId, onPreview, onClearPreview }: Props) {
 
   const [columns, setColumns] = useState<string[]>([pane.path])
   const [selectedPaths, setSelectedPaths] = useState<Record<number, string>>({})
+  // Per-column widths. Stored by stack index, not by path, because the
+  // same folder can show up at different positions in the breadcrumb.
+  // Any column without a stored width falls back to COLUMN_DEFAULT_WIDTH.
+  const [colWidths, setColWidths] = useState<Record<number, number>>({})
 
   const selfNavigating = useRef(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -93,6 +99,8 @@ export function ColumnView({ paneId, onPreview, onClearPreview }: Props) {
             sortKey={pane.sortKey}
             sortDir={pane.sortDir}
             isLast={i === columns.length - 1}
+            width={colWidths[i] ?? COLUMN_DEFAULT_WIDTH}
+            onResize={(w) => setColWidths((prev) => ({ ...prev, [i]: w }))}
             onSelect={(entry) => handleSelect(i, entry)}
             onOpen={handleOpen}
             onContextMenu={(e, entry) => fileMenu.openMenu(e, entry)}
@@ -108,6 +116,9 @@ export function ColumnView({ paneId, onPreview, onClearPreview }: Props) {
 
 /* ── Column panel ── */
 
+const COLUMN_MIN_WIDTH = 140
+const COLUMN_MAX_WIDTH = 800
+
 type ColumnPanelProps = {
   path: string
   showHidden: boolean
@@ -115,13 +126,15 @@ type ColumnPanelProps = {
   sortKey: SortKey
   sortDir: 'asc' | 'desc'
   isLast: boolean
+  width: number
+  onResize: (w: number) => void
   onSelect: (entry: FileEntry) => void
   onOpen: (entry: FileEntry) => void
   onContextMenu: (e: React.MouseEvent, entry: FileEntry) => void
   onBgContextMenu: (e: React.MouseEvent) => void
 }
 
-function ColumnPanel({ path, showHidden, selectedPath, sortKey, sortDir, onSelect, onOpen, onContextMenu, onBgContextMenu }: ColumnPanelProps) {
+function ColumnPanel({ path, showHidden, selectedPath, sortKey, sortDir, width, onResize, onSelect, onOpen, onContextMenu, onBgContextMenu }: ColumnPanelProps) {
   const { entries, loading } = useDirectory(path, showHidden)
   const foldersFirst = useSettingsStore((s) => s.windowsStyleSort)
 
@@ -130,8 +143,30 @@ function ColumnPanel({ path, showHidden, selectedPath, sortKey, sortDir, onSelec
     [entries, sortKey, sortDir, foldersFirst],
   )
 
+  function startResize(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    const startX = e.clientX
+    const startW = width
+    function onMove(ev: MouseEvent) {
+      const next = Math.min(COLUMN_MAX_WIDTH, Math.max(COLUMN_MIN_WIDTH, startW + (ev.clientX - startX)))
+      onResize(next)
+    }
+    function onUp() {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      document.body.style.cursor = ''
+    }
+    document.body.style.cursor = 'col-resize'
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
   return (
-    <div className="w-[240px] flex-shrink-0 flex flex-col border-r border-border/50 h-full">
+    <div
+      className="flex-shrink-0 flex flex-col border-r border-border/50 h-full relative"
+      style={{ width }}
+    >
       <div
         className="flex-1 overflow-y-auto scrollbar-thin py-1"
         onClick={(e) => e.stopPropagation()}
@@ -161,6 +196,17 @@ function ColumnPanel({ path, showHidden, selectedPath, sortKey, sortDir, onSelec
           />
         ))}
       </div>
+      {/* Resize handle straddling the right border. Sits on top of the
+          column border with a visible thin line so users can find it. */}
+      <span
+        onMouseDown={startResize}
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
+        title="Drag to resize column"
+        className="group absolute top-0 bottom-0 -right-1 w-2 cursor-col-resize z-20 flex justify-center"
+      >
+        <span className="w-px h-full bg-foreground/25 dark:bg-foreground/35 group-hover:bg-primary group-hover:w-0.5 transition-all" />
+      </span>
     </div>
   )
 }

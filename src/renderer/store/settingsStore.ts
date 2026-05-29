@@ -15,6 +15,19 @@ type Settings = {
   // modified first.
   defaultSortKey: SortKey
   defaultSortDir: SortDir
+  // List-view column widths in px. All columns are fixed-width so that
+  // resizing one shifts the others — Finder-style. A trailing minmax(0,1fr)
+  // is appended in the grid template to absorb leftover space when the
+  // total is narrower than the container.
+  listColumnWidths: { name: number; modified: number; size: number; kind: number }
+}
+
+export const LIST_COL_MIN = 60
+export const LIST_COL_MAX = 1200
+export const LIST_COL_GAP = 8 // matches Tailwind gap-2 used on the row grid
+
+export function listGridTemplate(w: Settings['listColumnWidths']): string {
+  return `32px ${w.name}px ${w.modified}px ${w.kind}px ${w.size}px minmax(0,1fr)`
 }
 
 const DEFAULTS: Settings = {
@@ -22,6 +35,7 @@ const DEFAULTS: Settings = {
   terminalApp: '',
   defaultSortKey: 'modified',
   defaultSortDir: 'desc',
+  listColumnWidths: { name: 360, modified: 170, size: 100, kind: 110 },
 }
 
 function load(): Settings {
@@ -41,6 +55,7 @@ function persist(s: Settings) {
       terminalApp: s.terminalApp,
       defaultSortKey: s.defaultSortKey,
       defaultSortDir: s.defaultSortDir,
+      listColumnWidths: s.listColumnWidths,
     }))
   } catch {}
 }

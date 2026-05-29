@@ -19,6 +19,7 @@ type Props = {
   gitStatus?: string
   onDragStartItem?: (entry: FileEntry, e: React.DragEvent) => void
   onDropOnFolder?: (folderPath: string, sources: string[]) => void
+  gridTemplate: string
 }
 
 const KIND: Record<string, string> = {
@@ -39,7 +40,7 @@ function kindLabel(ext: string, isDirectory: boolean): string {
   return KIND[ext.toLowerCase()] || (ext ? `${ext.toUpperCase()} document` : 'Document')
 }
 
-export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContextMenu, startInEdit, onEditDone, gitStatus, onDragStartItem, onDropOnFolder }: Props) {
+export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContextMenu, startInEdit, onEditDone, gitStatus, onDragStartItem, onDropOnFolder, gridTemplate }: Props) {
   const [editing, setEditing] = useState(!!startInEdit)
   const [editName, setEditName] = useState(entry.name)
   const [dropActive, setDropActive] = useState(false)
@@ -92,11 +93,12 @@ export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContext
         if (paths.length) onDropOnFolder?.(entry.path, paths)
       }}
       className={[
-        'grid grid-cols-[32px_minmax(0,1fr)_170px_100px_100px] items-center gap-2 px-3 py-1.5 cursor-default select-none text-[13px]',
+        'grid items-center gap-2 px-3 py-1.5 cursor-default select-none text-[13px]',
         selected ? 'row-active' : 'row-hover',
         isCut ? 'opacity-40' : '',
         dropActive ? 'ring-2 ring-primary/70 ring-inset bg-primary/10' : '',
       ].join(' ')}
+      style={{ gridTemplateColumns: gridTemplate }}
       onClick={handleClick}
       onDoubleClick={() => onOpen(entry)}
       onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onContextMenu(e, entry.path) }}
@@ -126,11 +128,12 @@ export function FileRow({ entry, selected, onSelect, onOpen, onRename, onContext
         </span>
       )}
 
-      <span className="text-xs text-muted-foreground tabular-nums truncate">{formatDate(entry.modified)}</span>
-      <span className="text-xs text-muted-foreground text-right tabular-nums">
+      <span className="pl-2 text-xs text-muted-foreground tabular-nums truncate">{formatDate(entry.modified)}</span>
+      <span className="pl-2 text-xs text-muted-foreground truncate">{kindLabel(entry.ext, entry.isDirectory)}</span>
+      <span className="pl-2 pr-2 text-xs text-muted-foreground text-right tabular-nums truncate">
         {entry.isDirectory ? '—' : formatSize(entry.size)}
       </span>
-      <span className="text-xs text-muted-foreground truncate">{kindLabel(entry.ext, entry.isDirectory)}</span>
+      <span />
     </div>
   )
 }

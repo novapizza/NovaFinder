@@ -16,7 +16,7 @@ import { useTagStore, type TagColor, EMPTY_TAGS, parseTagColor } from '../../sto
 import { useRecentsStore, RECENTS_PATH } from '../../store/recentsStore'
 import { useRecentFoldersStore } from '../../store/recentFoldersStore'
 import { useGitStatus } from '../../hooks/useGitStatus'
-import { useSettingsStore } from '../../store/settingsStore'
+import { useSettingsStore, listGridTemplate, LIST_COL_MIN, LIST_COL_MAX, LIST_COL_GAP } from '../../store/settingsStore'
 import { FileIcon } from '../FileIcon'
 
 type Props = {
@@ -132,6 +132,9 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   const { query: searchQuery, mode: searchMode, results: searchResults, scope: searchScope, searching } = useSearchStore()
   const tagMap = useTagStore((s) => s.map)
   const foldersFirst = useSettingsStore((s) => s.windowsStyleSort)
+  const colWidths = useSettingsStore((s) => s.listColumnWidths)
+  const setSetting = useSettingsStore((s) => s.set)
+  const gridTemplate = listGridTemplate(colWidths)
   const isSearching = !!(searchQuery && searchMode && searchScope === pane.path) && !isVirtualMode
 
   const sorted = useMemo(() => {
@@ -459,13 +462,13 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
       onClick={() => setActivePaneId(paneId)}
       onContextMenu={handleBgContextMenu}
     >
-      {viewMode === 'list' && (
-        <HeaderRow sortKey={pane.sortKey} sortDir={pane.sortDir} onSort={(k) => setSort(paneId, k)} />
-      )}
-
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto scrollbar-thin"
+        // Resize is clamped to keep totals within the pane, so list view
+        // doesn't need horizontal scroll. overflow-x-hidden also stops
+        // any transient overflow during ResizeObserver-driven width
+        // updates from flashing a scrollbar.
+        className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin"
         onMouseDown={handleScrollMouseDown}
         onClick={(e) => {
           if (suppressNextClickRef.current) { suppressNextClickRef.current = false; return }
@@ -488,12 +491,26 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
         )}
 
         {viewMode === 'list' && (
-          <>
+          // Wrapper fills the scroll viewport. Resize is clamped so the
+          // total column width never exceeds the viewport, which means we
+          // don't need w-max here — the trailing 1fr column absorbs any
+          // leftover space when the user shrinks columns.
+          <div className="min-w-full">
+            <HeaderRow
+              sortKey={pane.sortKey}
+              sortDir={pane.sortDir}
+              onSort={(k) => setSort(paneId, k)}
+              widths={colWidths}
+              gridTemplate={gridTemplate}
+              onResize={(w) => setSetting('listColumnWidths', w)}
+              scrollContainerRef={scrollRef}
+            />
             {pendingNew && (
               <PendingRow
                 type={pendingNew.type}
                 onCommit={commitPending}
                 onCancel={() => setPendingNew(null)}
+                gridTemplate={gridTemplate}
               />
             )}
             {!error && !useVirt && sorted.map((entry) => (
@@ -510,6 +527,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
                 gitStatus={gitStatus[entry.name]}
                 onDragStartItem={handleDragStartItem}
                 onDropOnFolder={handleDropOnFolder}
+                gridTemplate={gridTemplate}
               />
             ))}
             {!error && useVirt && (
@@ -546,13 +564,14 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
                         gitStatus={gitStatus[entry.name]}
                         onDragStartItem={handleDragStartItem}
                         onDropOnFolder={handleDropOnFolder}
+                        gridTemplate={gridTemplate}
                       />
                     </div>
                   )
                 })}
               </div>
             )}
-          </>
+          </div>
         )}
 
         {viewMode === 'gallery' && !error && (
@@ -604,7 +623,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
 
 /* ── Pending new item row (list view) ── */
 
-function PendingRow({ type, onCommit, onCancel }: { type: 'folder' | 'file'; onCommit: (name: string) => void; onCancel: () => void }) {
+function PendingRow({ type, onCommit, onCancel, gridTemplate }: { type: 'folder' | 'file'; onCommit: (name: string) => void; onCancel: () => void; gridTemplate: string }) {
   const defaultName = type === 'folder' ? 'untitled folder' : 'untitled.txt'
   const [name, setName] = useState(defaultName)
 
@@ -615,7 +634,10 @@ function PendingRow({ type, onCommit, onCancel }: { type: 'folder' | 'file'; onC
   }
 
   return (
-    <div className="grid grid-cols-[32px_minmax(0,1fr)_170px_100px_100px] items-center gap-2 px-3 py-1.5 row-active select-none text-[13px]">
+    <div
+      className="grid items-center gap-2 px-3 py-1.5 row-active select-none text-[13px]"
+      style={{ gridTemplateColumns: gridTemplate }}
+    >
       <span className="flex-shrink-0 flex items-center justify-center w-7 h-7">
         <FileIcon ext={type === 'file' ? 'txt' : ''} isDirectory={type === 'folder'} size={22} />
       </span>
@@ -632,37 +654,134 @@ function PendingRow({ type, onCommit, onCancel }: { type: 'folder' | 'file'; onC
         onFocus={(e) => e.target.select()}
         className="bg-surface-1 rounded px-1 text-[13px] text-foreground outline-none border border-primary/60 w-full"
       />
-      <span className="text-xs text-muted-foreground tabular-nums">—</span>
-      <span className="text-xs text-muted-foreground text-right tabular-nums">—</span>
-      <span className="text-xs text-muted-foreground">{type === 'folder' ? 'Folder' : 'Document'}</span>
+      <span className="pl-2 text-xs text-muted-foreground tabular-nums">—</span>
+      <span className="pl-2 text-xs text-muted-foreground">{type === 'folder' ? 'Folder' : 'Document'}</span>
+      <span className="pl-2 pr-2 text-xs text-muted-foreground text-right tabular-nums">—</span>
+      <span />
     </div>
   )
 }
 
+type Widths = { name: number; modified: number; size: number; kind: number }
+type ColKey = keyof Widths
+
+function clamp(v: number) {
+  return Math.min(LIST_COL_MAX, Math.max(LIST_COL_MIN, v))
+}
+
 function HeaderRow({
-  sortKey, sortDir, onSort,
-}: { sortKey: SortKey; sortDir: 'asc' | 'desc'; onSort: (k: SortKey) => void }) {
+  sortKey, sortDir, onSort, widths, gridTemplate, onResize, scrollContainerRef,
+}: {
+  sortKey: SortKey
+  sortDir: 'asc' | 'desc'
+  onSort: (k: SortKey) => void
+  widths: Widths
+  gridTemplate: string
+  onResize: (w: Widths) => void
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>
+}) {
   const arrow = (k: SortKey) => sortKey === k ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''
+
+  // Every column is fixed-width now. Each handle sits in the gap on the
+  // right edge of its column. Dragging the handle right grows that
+  // column; columns to the right shift along with it. When the total
+  // exceeds the pane width, the wrapper's horizontal scroll absorbs it.
+  const PX = 12
+  const ICON = 32
+  const G = LIST_COL_GAP
+  const HALF = G / 2
+  const leftOf = (col: ColKey): number => {
+    // Distance from the row's left edge to the *gap center* immediately
+    // after `col`. Must mirror the column order in listGridTemplate.
+    const order: ColKey[] = ['name', 'modified', 'kind', 'size']
+    let x = PX + ICON + G
+    for (const c of order) {
+      x += widths[c]
+      if (c === col) return x + HALF
+      x += G
+    }
+    return x
+  }
+
+  function startResize(col: ColKey, e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    const startX = e.clientX
+    const start = widths
+    const startW = start[col]
+    // The other columns stay fixed during this drag, so we can compute
+    // the upper bound once: whatever's left over in the pane after the
+    // overhead (icon col + horizontal padding + 4 inter-col gaps) and
+    // the other three column widths is the most this one can grow to.
+    const overhead = 2 * PX + ICON + 4 * G
+    const container = scrollContainerRef.current?.clientWidth ?? Number.POSITIVE_INFINITY
+    const otherCols = (['name', 'modified', 'size', 'kind'] as ColKey[])
+      .filter((c) => c !== col)
+      .reduce((s, c) => s + start[c], 0)
+    const maxByContainer = Math.max(LIST_COL_MIN, container - overhead - otherCols)
+    const upper = Math.min(LIST_COL_MAX, maxByContainer)
+    function onMove(ev: MouseEvent) {
+      const target = startW + (ev.clientX - startX)
+      const next = Math.min(upper, Math.max(LIST_COL_MIN, target))
+      onResize({ ...start, [col]: next })
+    }
+    function onUp() {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      document.body.style.cursor = ''
+    }
+    document.body.style.cursor = 'col-resize'
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
+  const cols: ColKey[] = ['name', 'modified', 'kind', 'size']
+
   return (
-    <div className="grid grid-cols-[32px_minmax(0,1fr)_170px_100px_100px] items-center gap-2 px-3 py-1.5 border-b border-border/40 bg-surface-1/40 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground flex-shrink-0">
-      <span />
-      <HeaderCell active={sortKey === 'name'} onClick={() => onSort('name')}>Name{arrow('name')}</HeaderCell>
-      <HeaderCell active={sortKey === 'modified'} onClick={() => onSort('modified')}>Modified{arrow('modified')}</HeaderCell>
-      <HeaderCell align="right" active={sortKey === 'size'} onClick={() => onSort('size')}>Size{arrow('size')}</HeaderCell>
-      <HeaderCell active={sortKey === 'kind'} onClick={() => onSort('kind')}>Kind{arrow('kind')}</HeaderCell>
+    <div className="relative sticky top-0 z-10 bg-surface-1">
+      <div
+        className="grid items-center gap-2 px-3 py-1.5 border-b border-border/40 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+        style={{ gridTemplateColumns: gridTemplate }}
+      >
+        <span />
+        <HeaderCell active={sortKey === 'name'} onClick={() => onSort('name')}>Name{arrow('name')}</HeaderCell>
+        <HeaderCell indent active={sortKey === 'modified'} onClick={() => onSort('modified')}>Modified{arrow('modified')}</HeaderCell>
+        <HeaderCell indent active={sortKey === 'kind'} onClick={() => onSort('kind')}>Kind{arrow('kind')}</HeaderCell>
+        <HeaderCell indent active={sortKey === 'size'} onClick={() => onSort('size')}>Size{arrow('size')}</HeaderCell>
+        <span />
+      </div>
+      {cols.map((col) => (
+        <span
+          key={col}
+          onMouseDown={(e) => startResize(col, e)}
+          onClick={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
+          title={`Drag to resize ${col}`}
+          className="group absolute top-1 bottom-1 w-2 -ml-1 cursor-col-resize z-20 flex justify-center"
+          style={{ left: leftOf(col) - 1 }}
+        >
+          {/* Always-visible divider. Uses foreground at low opacity so it
+              picks up contrast from whichever theme is active (a darker
+              tint on light backgrounds, a lighter tint on dark). */}
+          <span className="w-px h-full bg-foreground/25 dark:bg-foreground/35 group-hover:bg-primary group-hover:w-0.5 transition-all" />
+        </span>
+      ))}
     </div>
   )
 }
 
 function HeaderCell({
-  children, active, onClick, align = 'left',
-}: { children: React.ReactNode; active?: boolean; onClick: () => void; align?: 'left' | 'right' }) {
+  children, active, onClick, indent = false,
+}: { children: React.ReactNode; active?: boolean; onClick: () => void; indent?: boolean }) {
   return (
     <button
       onClick={onClick}
       className={[
-        'truncate hover:text-foreground transition-colors',
-        align === 'right' ? 'text-right' : 'text-left',
+        'truncate text-left hover:text-foreground transition-colors',
+        // Pull the label off the separator line so the column boundary
+        // is visible at a glance. The icon column already creates
+        // breathing room for Name, so it opts out.
+        indent ? 'pl-2' : '',
         active ? 'text-foreground' : '',
       ].join(' ')}
     >

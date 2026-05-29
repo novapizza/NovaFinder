@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { usePaneStore, type SortKey } from '../store/paneStore'
 import { Tooltip } from './Tooltip'
 
@@ -15,12 +16,16 @@ export function SortMenu() {
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 })
   const { activePaneId, panes, setSort } = usePaneStore()
   const pane = panes[activePaneId]
-  const ref = useRef<HTMLDivElement>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false)
+      const t = e.target as Node
+      if (wrapRef.current?.contains(t)) return
+      if (menuRef.current?.contains(t)) return
+      setOpen(false)
     }
     window.addEventListener('mousedown', h)
     return () => window.removeEventListener('mousedown', h)
@@ -40,7 +45,7 @@ export function SortMenu() {
   }
 
   return (
-    <div ref={ref} className="relative [-webkit-app-region:no-drag]">
+    <div ref={wrapRef} className="relative [-webkit-app-region:no-drag]">
       <Tooltip label="Sort">
         <button
           ref={btnRef}
@@ -55,8 +60,13 @@ export function SortMenu() {
           </svg>
         </button>
       </Tooltip>
-      {open && (
+      {open && createPortal(
+        // Rendered into document.body so the dropdown escapes the
+        // Toolbar's `backdrop-filter` stacking context — otherwise its
+        // z-index is trapped local to the Toolbar and the file list
+        // paints on top of it.
         <div
+          ref={menuRef}
           className="fixed nd-context-menu rounded-[10px] text-[13px] min-w-[200px] z-[99999]"
           style={{ padding: '6px 4px', top: menuPos.top, right: menuPos.right }}
         >
@@ -91,7 +101,8 @@ export function SortMenu() {
           >
             {pane.sortDir === 'asc' ? 'Sort Z→A / New→Old' : 'Sort A→Z / Old→New'}
           </button>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
