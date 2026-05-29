@@ -614,12 +614,15 @@ export function registerFsHandlers() {
     // document/folder/app icon), so the drag cursor matches the file
     // rather than showing our logo. Use the first dragged item.
     try {
-      // Use the OS file-type icon at 'normal' size. NOTE: 'large' and any
-      // resize() of this image crash startDrag on macOS (the multi-
-      // representation Retina NSImage it returns is rejected by the drag
-      // session), so we pass it through untouched.
       const fileIcon = await app.getFileIcon(paths[0], { size: 'normal' })
-      if (!fileIcon.isEmpty()) icon = fileIcon
+      if (!fileIcon.isEmpty()) {
+        // Resizing the raw getFileIcon result crashes startDrag (it's a
+        // multi-representation Retina NSImage). Flatten it to a plain
+        // single-rep PNG first, THEN scale — resizing the flattened bitmap
+        // is a different operation that the drag session accepts.
+        const flat = nativeImage.createFromBuffer(fileIcon.toPNG())
+        icon = flat.isEmpty() ? fileIcon : flat.resize({ width: 64, height: 64 })
+      }
     } catch {
       // getFileIcon can reject for missing/inaccessible paths — fall through.
     }
