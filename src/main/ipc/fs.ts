@@ -614,14 +614,27 @@ export function registerFsHandlers() {
     // document/folder/app icon), so the drag cursor matches the file
     // rather than showing our logo. Use the first dragged item.
     try {
-      const fileIcon = await app.getFileIcon(paths[0], { size: 'normal' })
-      if (!fileIcon.isEmpty()) {
-        // Resizing the raw getFileIcon result crashes startDrag (it's a
+      // Prefer an actual content thumbnail (QuickLook): images show their
+      // preview, PDFs their first page, etc. It rejects/returns empty for
+      // folders, plain text, and files with no QuickLook provider, so we
+      // fall back to the OS file-type icon in those cases.
+      let raw: Electron.NativeImage | null = null
+      try {
+        raw = await nativeImage.createThumbnailFromPath(paths[0], { width: 64, height: 64 })
+      } catch {
+        // No QuickLook thumbnail available — fall back to the type icon.
+      }
+      if (!raw || raw.isEmpty()) {
+        raw = await app.getFileIcon(paths[0], { size: 'normal' })
+      }
+      if (!raw.isEmpty()) {
+        // Resizing the raw image crashes startDrag (getFileIcon returns a
         // multi-representation Retina NSImage). Flatten it to a plain
         // single-rep PNG first, THEN scale — resizing the flattened bitmap
-        // is a different operation that the drag session accepts.
-        const flat = nativeImage.createFromBuffer(fileIcon.toPNG())
-        icon = flat.isEmpty() ? fileIcon : flat.resize({ width: 64, height: 64 })
+        // is a different operation that the drag session accepts. Width-only
+        // resize preserves aspect ratio so previews aren't squished.
+        const flat = nativeImage.createFromBuffer(raw.toPNG())
+        icon = flat.isEmpty() ? raw : flat.resize({ width: 64 })
       }
     } catch {
       // getFileIcon can reject for missing/inaccessible paths — fall through.
