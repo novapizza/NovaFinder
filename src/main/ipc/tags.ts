@@ -2,7 +2,7 @@ import { ipcMain, app } from 'electron'
 import fs from 'fs/promises'
 import path from 'path'
 
-export type TagColor = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'gray'
+export type TagColor = string
 
 let cache: Record<string, TagColor[]> | null = null
 

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import path from 'path-browserify'
 import { Lock } from 'lucide-react'
 import { formatSize, formatDate } from '../../lib/formatters'
-import { useTagStore, TAG_COLORS, EMPTY_TAGS, type TagColor } from '../../store/tagStore'
+import { useTagStore, EMPTY_TAGS, type TagColor } from '../../store/tagStore'
+import { useAllTagDefs } from '../../store/settingsStore'
 
 type Props = { filePath: string }
 
@@ -108,12 +109,13 @@ function Meta({ label, value, mono, icon: Icon, title }: {
 }
 
 function TagPill({ color }: { color: TagColor }) {
-  const def = TAG_COLORS.find((c) => c.name === color)
+  const allTagDefs = useAllTagDefs()
+  const def = allTagDefs.find((d) => d.name === color)
   return (
     <span className="flex items-center gap-1.5 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-foreground">
       <span
         className="h-2.5 w-2.5 rounded-full"
-        style={{ backgroundColor: `var(--tag-${color})`, boxShadow: 'inset 0 0 0 0.5px hsl(0 0% 0% / 0.25)' }}
+        style={{ backgroundColor: def?.hex ?? `var(--tag-${color})`, boxShadow: 'inset 0 0 0 0.5px hsl(0 0% 0% / 0.25)' }}
       />
       {def?.label ?? color}
     </span>

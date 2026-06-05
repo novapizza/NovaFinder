@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useAllTagDefs } from '../store/settingsStore'
 
 export type MenuIcon =
   | 'open' | 'open-default' | 'reveal' | 'info'
@@ -98,31 +99,22 @@ export function ContextMenu({ x, y, items, onClose, boundsRef }: Props) {
   )
 }
 
-const TAG_DOTS: { color: string; label: string }[] = [
-  { color: 'red',    label: 'Red' },
-  { color: 'orange', label: 'Orange' },
-  { color: 'yellow', label: 'Yellow' },
-  { color: 'green',  label: 'Green' },
-  { color: 'blue',   label: 'Blue' },
-  { color: 'purple', label: 'Purple' },
-  { color: 'gray',   label: 'Gray' },
-]
-
 function TagsRow({ selectedColors, onToggle }: { selectedColors: string[]; onToggle: (color: string) => void }) {
+  const allTagDefs = useAllTagDefs()
   return (
-    <div className="flex items-center justify-between px-5 py-3 gap-2">
-      {TAG_DOTS.map((t) => {
-        const active = selectedColors.includes(t.color)
+    <div className="flex items-center justify-between px-5 py-3 gap-2 flex-wrap">
+      {allTagDefs.map((t) => {
+        const active = selectedColors.includes(t.name)
         return (
           <button
-            key={t.color}
+            key={t.name}
             title={t.label}
-            onClick={(e) => { e.stopPropagation(); onToggle(t.color) }}
+            onClick={(e) => { e.stopPropagation(); onToggle(t.name) }}
             className="w-6 h-6 rounded-full transition-transform hover:scale-110 relative"
             style={{
-              backgroundColor: `var(--tag-${t.color})`,
+              backgroundColor: t.hex,
               boxShadow: active
-                ? `inset 0 0 0 2px white, 0 0 0 2.5px var(--tag-${t.color})`
+                ? `inset 0 0 0 2px white, 0 0 0 2.5px ${t.hex}`
                 : 'inset 0 0 0 0.5px hsl(0 0% 0% / 0.25)',
             }}
           />
