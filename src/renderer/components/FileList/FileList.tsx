@@ -292,7 +292,10 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
       setSelection(paneId, [path], path)
       const entry = sorted.find((e) => e.path === path)
       if (entry && !entry.isDirectory) {
-        addRecent({ path: entry.path, name: entry.name, ext: entry.ext })
+        // Don't re-record on selection while viewing Recents — bumping
+        // openedAt would re-sort the just-clicked file to the front and make
+        // it jump under the cursor. Opening (handleOpen) still records it.
+        if (!isRecentsMode) addRecent({ path: entry.path, name: entry.name, ext: entry.ext })
         onPreview(entry.path, entry.ext)
       } else {
         onClearPreview?.()

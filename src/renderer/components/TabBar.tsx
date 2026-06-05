@@ -1,4 +1,5 @@
 import { usePaneStore, type PaneId } from '../store/paneStore'
+import { RECENTS_PATH } from '../store/recentsStore'
 
 type Props = { paneId: PaneId }
 
@@ -10,6 +11,7 @@ export function TabBar({ paneId }: Props) {
   const newTab = usePaneStore((s) => s.newTab)
 
   function tabLabel(path: string): string {
+    if (path === RECENTS_PATH) return 'Recents'
     if (path === '/' || !path) return '/'
     const seg = path.split('/').filter(Boolean).pop()
     return seg ?? path
@@ -29,7 +31,7 @@ export function TabBar({ paneId }: Props) {
                 ? 'bg-background text-foreground border border-b-0 border-border/60'
                 : 'bg-surface-2/40 text-muted-foreground hover:bg-surface-2/70 hover:text-foreground',
             ].join(' ')}
-            title={t.path}
+            title={tabLabel(t.path)}
           >
             <span className="truncate">{tabLabel(t.path)}</span>
             {tabs.length > 1 && (

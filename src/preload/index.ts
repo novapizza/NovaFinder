@@ -96,8 +96,9 @@ contextBridge.exposeInMainWorld('fs', {
   watchStart: (p: string) => ipcRenderer.send('fs:watch:start', p),
   watchStop: (p: string) => ipcRenderer.send('fs:watch:stop', p),
   onWatchEvent: (cb: (e: { dirPath: string; eventType: string; filename: string }) => void) => {
-    ipcRenderer.on('fs:watch:event', (_e, data) => cb(data))
-    return () => ipcRenderer.removeAllListeners('fs:watch:event')
+    const handler = (_e: unknown, data: { dirPath: string; eventType: string; filename: string }) => cb(data)
+    ipcRenderer.on('fs:watch:event', handler)
+    return () => ipcRenderer.removeListener('fs:watch:event', handler)
   },
   onOpenSettings: (cb: () => void) => {
     ipcRenderer.on('app:open-settings', cb)
