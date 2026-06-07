@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTagStore } from './store/tagStore'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import { Toolbar } from './components/Toolbar'
@@ -17,6 +17,7 @@ import { UpdateNotification } from './components/UpdateNotification'
 import { SettingsModal } from './components/SettingsModal'
 import { useSearchStore } from './store/searchStore'
 import { useSettingsStore } from './store/settingsStore'
+import type { CommandId } from '../shared/commands'
 import { RECENTS_PATH } from './store/recentsStore'
 import { SMART_PATH_PREFIX } from './store/smartFoldersStore'
 import { TAG_PATH_PREFIX } from './store/tagStore'
@@ -34,9 +35,11 @@ export default function App() {
   const reloadFn = useRef<(() => void) | null>(null)
   const newFolderFn = useRef<(() => void) | null>(null)
   const newFileFn = useRef<(() => void) | null>(null)
+  const startRenameFn = useRef<(() => void) | null>(null)
 
   const { activePaneId, panes, activeTabId, showHidden, setSelection } = usePaneStore()
-  const { } = useFileOps()
+  const { duplicate, copyPath, deleteFiles } = useFileOps(handleRefresh)
+  const shortcuts = useSettingsStore((s) => s.shortcuts)
   const loadTags = useTagStore((s) => s.load)
   const { theme, mode: themeMode, toggle: toggleTheme } = useTheme()
   const clearSearch = useSearchStore((s) => s.clear)
@@ -60,21 +63,51 @@ export default function App() {
     setSelection(activePaneId, entries.map((e) => e.path))
   }
 
+  function toggleQuickLook(p: string) {
+    if (previewFile?.path === p) {
+      setPreviewFile(null)
+    } else {
+      const ext = p.split('.').pop() ?? ''
+      setPreviewFile({ path: p, ext })
+      setShowPreview(true)
+    }
+  }
+
+  // Single dispatcher for the remappable file-action commands, shared by the
+  // in-app keyboard (useKeyboard) and the native menu bar (via app:command).
+  function runCommand(id: CommandId) {
+    const st = usePaneStore.getState()
+    const pane = st.panes[st.activePaneId]
+    const sel = pane.selection
+    switch (id) {
+      case 'newFolder': newFolderFn.current?.(); break
+      case 'newFile': newFileFn.current?.(); break
+      case 'getInfo': if (sel.length === 1) setGlobalInfoPath(sel[0]); break
+      case 'rename': startRenameFn.current?.(); break
+      case 'duplicate': if (sel.length) duplicate(sel); break
+      case 'moveToTrash': if (sel.length) deleteFiles(sel); break
+      case 'copyPath': if (sel.length) copyPath(sel); break
+      case 'openInTerminal': window.fs.openInTerminal(pane.path, useSettingsStore.getState().terminalApp); break
+      case 'quickLook': if (sel.length === 1) toggleQuickLook(sel[0]); break
+      case 'refresh': handleRefresh(); break
+    }
+  }
+  // Stable wrapper so keydown/menu listeners don't re-subscribe each render,
+  // while still calling the latest runCommand (fresh state/closures).
+  const runCommandRef = useRef(runCommand)
+  runCommandRef.current = runCommand
+  const dispatchCommand = useCallback((id: CommandId) => runCommandRef.current(id), [])
+
+  // Native menu item clicks arrive here as command ids.
+  useEffect(() => window.fs.onCommand((id) => dispatchCommand(id as CommandId)), [dispatchCommand])
+
+  // Keep the native menu-bar accelerators in sync with the user's overrides.
+  useEffect(() => { window.fs.setMenuShortcuts(shortcuts) }, [shortcuts])
+
   useKeyboard({
     onRefresh: handleRefresh,
     onSelectAll: handleSelectAll,
-    onGetInfo: (p) => setGlobalInfoPath(p),
-    onNewFolder: () => newFolderFn.current?.(),
-    onQuickLook: (p) => {
-      if (previewFile?.path === p) {
-        setPreviewFile(null)
-      } else {
-        const ext = p.split('.').pop() ?? ''
-        setPreviewFile({ path: p, ext })
-        setShowPreview(true)
-      }
-    },
-    onOpenInTerminal: (dirPath) => window.fs.openInTerminal(dirPath, useSettingsStore.getState().terminalApp),
+    runCommand: dispatchCommand,
   })
 
   return (
@@ -115,6 +148,7 @@ export default function App() {
                     registerReload={(fn) => { reloadFn.current = fn }}
                     registerNewFolder={(fn) => { newFolderFn.current = fn }}
                     registerNewFile={(fn) => { newFileFn.current = fn }}
+                    registerStartRename={(fn) => { startRenameFn.current = fn }}
                   />
                 </div>
               </Panel>

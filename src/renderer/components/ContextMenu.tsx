@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAllTagDefs } from '../store/settingsStore'
 
 export type MenuIcon =
@@ -8,7 +8,7 @@ export type MenuIcon =
   | 'new-folder' | 'new-file' | 'refresh'
 
 export type MenuItem =
-  | { label: string; action: () => void; icon?: MenuIcon; disabled?: boolean; danger?: boolean; separator?: false }
+  | { label: string; action: () => void; icon?: MenuIcon; shortcut?: string; disabled?: boolean; danger?: boolean; separator?: false }
   | { separator: true }
   | { tagsRow: true; selectedColors: string[]; onToggle: (color: string) => void; closeOnToggle?: boolean }
 
@@ -22,19 +22,80 @@ type Props = {
 
 export function ContextMenu({ x, y, items, onClose, boundsRef }: Props) {
   const ref = useRef<HTMLDivElement>(null)
+  const btnRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const typeRef = useRef<{ buf: string; at: number }>({ buf: '', at: 0 })
+
+  // Indices of items that can be focused/activated by keyboard (real,
+  // non-disabled menu entries — separators and the tag row are skipped).
+  const focusable = useMemo(
+    () =>
+      items.reduce<number[]>((acc, item, i) => {
+        if ('label' in item && !item.disabled) acc.push(i)
+        return acc
+      }, []),
+    [items],
+  )
+  const [focused, setFocused] = useState(-1)
+
+  // Focus the menu on open so it captures the keyboard immediately, and
+  // highlight the first actionable item for arrow-key / Enter users.
+  useEffect(() => {
+    ref.current?.focus({ preventScroll: true })
+    setFocused(focusable[0] ?? -1)
+  }, [focusable])
+
+  useEffect(() => {
+    if (focused >= 0) btnRefs.current[focused]?.scrollIntoView({ block: 'nearest' })
+  }, [focused])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) onClose()
     }
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('mousedown', handler)
-    window.addEventListener('keydown', esc)
-    return () => {
-      window.removeEventListener('mousedown', handler)
-      window.removeEventListener('keydown', esc)
-    }
+    return () => window.removeEventListener('mousedown', handler)
   }, [onClose])
+
+  function moveFocus(dir: 1 | -1) {
+    if (!focusable.length) return
+    const pos = focusable.indexOf(focused)
+    const next = pos < 0
+      ? (dir === 1 ? 0 : focusable.length - 1)
+      : (pos + dir + focusable.length) % focusable.length
+    setFocused(focusable[next])
+  }
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    // Keep keystrokes inside the menu — don't let the file list's global
+    // type-ahead / arrow handlers also react while the menu is open.
+    e.stopPropagation()
+    switch (e.key) {
+      case 'Escape': e.preventDefault(); onClose(); return
+      case 'ArrowDown': e.preventDefault(); moveFocus(1); return
+      case 'ArrowUp': e.preventDefault(); moveFocus(-1); return
+      case 'Home': e.preventDefault(); setFocused(focusable[0] ?? -1); return
+      case 'End': e.preventDefault(); setFocused(focusable[focusable.length - 1] ?? -1); return
+      case 'Enter':
+      case ' ': {
+        e.preventDefault()
+        const item = items[focused]
+        if (item && 'label' in item && !item.disabled) { item.action(); onClose() }
+        return
+      }
+    }
+    // Type-ahead: jump to the next item whose label starts with the typed key.
+    if (e.key.length === 1 && /\S/.test(e.key)) {
+      const now = Date.now()
+      const fresh = now - typeRef.current.at > 600
+      const buf = (fresh ? '' : typeRef.current.buf) + e.key.toLowerCase()
+      typeRef.current = { buf, at: now }
+      const match = focusable.find((i) => {
+        const it = items[i] as Extract<MenuItem, { label: string }>
+        return it.label.toLowerCase().startsWith(buf)
+      })
+      if (match !== undefined) setFocused(match)
+    }
+  }
 
   const MENU_W = 260
   const itemCount = items.filter((i) => !('separator' in i && i.separator)).length
@@ -65,7 +126,10 @@ export function ContextMenu({ x, y, items, onClose, boundsRef }: Props) {
   return (
     <div
       ref={ref}
-      style={style}
+      style={{ ...style, outline: 'none' }}
+      tabIndex={-1}
+      role="menu"
+      onKeyDown={onKeyDown}
       className="nd-context-menu rounded-[10px] text-[13px] shadow-[0_14px_48px_rgba(0,0,0,0.35),0_2px_8px_rgba(0,0,0,0.2)]"
     >
       {items.map((item, i) => {
@@ -76,22 +140,32 @@ export function ContextMenu({ x, y, items, onClose, boundsRef }: Props) {
           return <TagsRow key={i} selectedColors={item.selectedColors} onToggle={(c) => { item.onToggle(c); if (item.closeOnToggle) onClose() }} />
         }
         const it = item as Extract<MenuItem, { label: string }>
+        const isFocused = i === focused
         return (
           <button
             key={i}
+            ref={(el) => { btnRefs.current[i] = el }}
+            role="menuitem"
             disabled={it.disabled}
+            onMouseEnter={() => !it.disabled && setFocused(i)}
             onClick={() => { it.action(); onClose() }}
             className={[
               'group w-full flex items-center gap-2.5 px-3.5 py-[3px] rounded-md transition-colors text-left',
               it.disabled ? 'opacity-40 cursor-default' :
-              it.danger ? 'text-red-400 hover:bg-red-500 hover:text-white' :
-              'hover:bg-[var(--accent-color)] hover:text-white',
+              it.danger
+                ? (isFocused ? 'bg-red-500 text-white' : 'text-red-400')
+                : (isFocused ? 'bg-[var(--accent-color)] text-white' : ''),
             ].join(' ')}
           >
-            <span className="w-[22px] h-[22px] flex-shrink-0 flex items-center justify-center opacity-75 group-hover:opacity-100">
+            <span className={['w-[22px] h-[22px] flex-shrink-0 flex items-center justify-center', isFocused ? 'opacity-100' : 'opacity-75'].join(' ')}>
               {it.icon ? <MenuIconSvg name={it.icon} /> : <span className="w-[22px]" />}
             </span>
             <span className="flex-1 truncate">{it.label}</span>
+            {it.shortcut && (
+              <span className={['ml-3 flex-shrink-0 text-[12px] tabular-nums', isFocused ? 'opacity-80' : 'opacity-45'].join(' ')}>
+                {it.shortcut}
+              </span>
+            )}
           </button>
         )
       })}
