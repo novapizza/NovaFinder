@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { SortKey, SortDir } from './paneStore'
 import { TAG_COLORS } from './tagStore'
+import type { ShortcutOverrides } from '../../shared/commands'
 
 const KEY = 'nova_settings'
 
@@ -44,6 +45,9 @@ type Settings = {
   tagLabels: Partial<Record<string, string>>
   // User-created tags beyond the 7 built-ins.
   customTags: CustomTag[]
+  // Per-command keyboard shortcut overrides. Missing key = use the command's
+  // default accelerator. An empty string means the user explicitly unbound it.
+  shortcuts: ShortcutOverrides
 }
 
 export const LIST_COL_MIN = 60
@@ -64,6 +68,7 @@ const DEFAULTS: Settings = {
   sidebarTags: {},
   tagLabels: {},
   customTags: [],
+  shortcuts: {},
 }
 
 // Visibility helpers — opt-out: missing key = visible.
@@ -107,6 +112,7 @@ function persist(s: Settings) {
       sidebarTags: s.sidebarTags,
       tagLabels: s.tagLabels,
       customTags: s.customTags,
+      shortcuts: s.shortcuts,
     }))
   } catch {}
 }

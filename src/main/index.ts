@@ -1,14 +1,38 @@
-import { app, BrowserWindow, Menu } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain } from 'electron'
 import path from 'path'
 import { registerFsHandlers } from './ipc/fs'
 import { registerWatcherHandlers, stopAllWatchers } from './ipc/watcher'
 import { registerTagsHandlers } from './ipc/tags'
 import { setupUpdater } from './update'
+import { COMMANDS, resolveAccel, type CommandId, type ShortcutOverrides } from '../shared/commands'
 
 app.setName('NovaFinder')
 
+// Latest shortcut overrides pushed from the renderer; used to label the File
+// menu's accelerators so they match the user's remapped in-app shortcuts.
+let shortcutOverrides: ShortcutOverrides = {}
+let mainWin: BrowserWindow | null = null
+
+ipcMain.on('menu:setShortcuts', (_e, overrides: ShortcutOverrides) => {
+  shortcutOverrides = overrides || {}
+  if (mainWin) buildMenu(mainWin)
+})
+
 function buildMenu(win: BrowserWindow) {
   const isMac = process.platform === 'darwin'
+
+  // A File-menu item for a remappable command. The accelerator is shown for
+  // discoverability but NOT registered (registerAccelerator: false) — the
+  // renderer's keyboard handler owns the actual key, so it can't double-fire.
+  const cmd = (id: CommandId): Electron.MenuItemConstructorOptions => {
+    const def = COMMANDS.find((c) => c.id === id)!
+    const accel = resolveAccel(id, shortcutOverrides)
+    return {
+      label: def.label,
+      ...(accel ? { accelerator: accel, registerAccelerator: false } : {}),
+      click: () => { win.webContents.send('app:command', id) },
+    }
+  }
 
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(isMac
@@ -40,6 +64,14 @@ function buildMenu(win: BrowserWindow) {
     {
       label: 'File',
       submenu: [
+        cmd('newFolder'), cmd('newFile'),
+        { type: 'separator' },
+        cmd('getInfo'), cmd('rename'), cmd('duplicate'),
+        { type: 'separator' },
+        cmd('moveToTrash'),
+        { type: 'separator' },
+        cmd('openInTerminal'), cmd('quickLook'), cmd('copyPath'), cmd('refresh'),
+        { type: 'separator' },
         { role: isMac ? 'close' : 'quit' },
       ],
     },
@@ -110,6 +142,7 @@ function createWindow() {
   })
 
   registerWatcherHandlers(win)
+  mainWin = win
   buildMenu(win)
 
   win.once('ready-to-show', () => win.show())

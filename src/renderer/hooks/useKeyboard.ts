@@ -3,19 +3,20 @@ import { usePaneStore } from '../store/paneStore'
 import { useFileOps } from './useFileOps'
 import { useSearchStore } from '../store/searchStore'
 import { useHistoryStore } from '../store/historyStore'
+import { useSettingsStore } from '../store/settingsStore'
+import { COMMANDS, resolveAccel, type CommandId } from '../../shared/commands'
+import { matchesAccel } from '../lib/accelerator'
 
 type Options = {
   onRefresh?: () => void
   onSelectAll?: () => void
-  onGetInfo?: (p: string) => void
-  onNewFolder?: () => void
-  onQuickLook?: (p: string) => void
-  onOpenInTerminal?: (p: string) => void
+  // Dispatches a remappable file-action command (see shared/commands.ts).
+  runCommand?: (id: CommandId) => void
 }
 
 export function useKeyboard(options: Options = {}) {
   const { activePaneId, panes, navigateBack, navigateForward, navigateUp, toggleHidden, setViewMode, newTab, closeTab, activeTabId, switchTab, tabs } = usePaneStore()
-  const { cut, copy, paste, deleteFiles, duplicate, copyPath } = useFileOps(options.onRefresh)
+  const { cut, copy, paste } = useFileOps(options.onRefresh)
   const focusSearch = useSearchStore((s) => s.focusSearch)
   const undo = useHistoryStore((s) => s.undo)
   const redo = useHistoryStore((s) => s.redo)
@@ -35,6 +36,23 @@ export function useKeyboard(options: Options = {}) {
       const pane = panes[activePaneId]
       const sel = pane.selection
 
+      // Remappable file-action commands win first, resolved against the user's
+      // overrides so a custom binding takes effect everywhere at once.
+      const overrides = useSettingsStore.getState().shortcuts
+      for (const c of COMMANDS) {
+        const accel = resolveAccel(c.id, overrides)
+        if (accel && matchesAccel(e, accel)) {
+          e.preventDefault()
+          options.runCommand?.(c.id)
+          return
+        }
+      }
+      // Bare forward-delete also trashes the selection (kept for muscle memory;
+      // the remappable binding is Cmd+Backspace).
+      if (e.key === 'Delete' && !meta && !e.altKey && !e.ctrlKey && sel.length) {
+        e.preventDefault(); options.runCommand?.('moveToTrash'); return
+      }
+
       if (meta && e.key === 'ArrowLeft') { e.preventDefault(); navigateBack(activePaneId); return }
       if (meta && e.key === 'ArrowRight') { e.preventDefault(); navigateForward(activePaneId); return }
       if (meta && e.key === 'ArrowUp') { e.preventDefault(); navigateUp(activePaneId); return }
@@ -45,10 +63,6 @@ export function useKeyboard(options: Options = {}) {
       if (meta && e.key === 'x' && sel.length) { e.preventDefault(); cut(sel); return }
       if (meta && e.key === 'c' && sel.length) { e.preventDefault(); copy(sel); return }
       if (meta && e.key === 'v') { e.preventDefault(); paste(); return }
-
-      if ((e.key === 'Delete' || (meta && e.key === 'Backspace')) && sel.length) {
-        e.preventDefault(); deleteFiles(sel); return
-      }
 
       if (meta && shift && (e.key === 'z' || e.key === 'Z')) {
         e.preventDefault()
@@ -61,14 +75,7 @@ export function useKeyboard(options: Options = {}) {
         return
       }
       if (meta && e.key === 'a') { e.preventDefault(); options.onSelectAll?.(); return }
-      if (meta && e.key === 'r') { e.preventDefault(); options.onRefresh?.(); return }
       if (meta && shift && e.key === '.') { e.preventDefault(); toggleHidden(); return }
-
-      // Finder-style extras
-      if (meta && e.key === 'd' && sel.length) { e.preventDefault(); duplicate(sel); return }
-      if (meta && e.altKey && e.key === 'c' && sel.length) { e.preventDefault(); copyPath(sel); return }
-      if (meta && e.key === 'i' && sel.length === 1) { e.preventDefault(); options.onGetInfo?.(sel[0]); return }
-      if (meta && shift && (e.key === 'n' || e.key === 'N')) { e.preventDefault(); options.onNewFolder?.(); return }
       if (meta && e.key === 'f') { e.preventDefault(); focusSearch(); return }
 
       if (meta && e.key === '1') { e.preventDefault(); setViewMode('icon'); return }
@@ -76,8 +83,6 @@ export function useKeyboard(options: Options = {}) {
       if (meta && e.key === '3') { e.preventDefault(); setViewMode('column'); return }
       if (meta && e.key === '4') { e.preventDefault(); setViewMode('gallery'); return }
 
-      if (e.key === ' ' && sel.length === 1) { e.preventDefault(); options.onQuickLook?.(sel[0]); return }
-      if (meta && e.altKey && e.key === 't') { e.preventDefault(); options.onOpenInTerminal?.(pane.path); return }
       if (meta && e.key === 't') { e.preventDefault(); newTab(activePaneId); return }
       if (meta && e.key === 'w') {
         e.preventDefault()
@@ -103,5 +108,5 @@ export function useKeyboard(options: Options = {}) {
 
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [activePaneId, panes, options.onRefresh, options.onSelectAll])
+  }, [activePaneId, panes, options.onRefresh, options.onSelectAll, options.runCommand])
 }

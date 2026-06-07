@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSettingsStore, useAllTagDefs, SIDEBAR_ITEMS, isSidebarItemHidden, isSidebarTagHidden, getTagLabel, type SidebarItemId, type CustomTag } from '../store/settingsStore'
 import { TAG_COLORS } from '../store/tagStore'
+import { COMMANDS, resolveAccel, formatAccel, type CommandId } from '../../shared/commands'
+import { accelFromEvent } from '../lib/accelerator'
 
-type Tab = 'general' | 'sidebar' | 'tags' | 'advanced'
+type Tab = 'general' | 'sidebar' | 'tags' | 'shortcuts' | 'advanced'
 
 type Props = {
   onClose: () => void
@@ -41,6 +43,7 @@ export function SettingsModal({ onClose }: Props) {
           <TabButton active={tab === 'general'} onClick={() => setTab('general')}>General</TabButton>
           <TabButton active={tab === 'sidebar'} onClick={() => setTab('sidebar')}>Sidebar</TabButton>
           <TabButton active={tab === 'tags'} onClick={() => setTab('tags')}>Tags</TabButton>
+          <TabButton active={tab === 'shortcuts'} onClick={() => setTab('shortcuts')}>Shortcuts</TabButton>
           <TabButton active={tab === 'advanced'} onClick={() => setTab('advanced')}>Advanced</TabButton>
         </div>
 
@@ -49,6 +52,7 @@ export function SettingsModal({ onClose }: Props) {
           {tab === 'general' && <GeneralTab />}
           {tab === 'sidebar' && <SidebarTab />}
           {tab === 'tags' && <TagsTab />}
+          {tab === 'shortcuts' && <ShortcutsTab />}
           {tab === 'advanced' && <AdvancedTab />}
         </div>
       </div>
@@ -140,6 +144,122 @@ function GeneralTab() {
           </button>
         </div>
       </Row>
+    </div>
+  )
+}
+
+function ShortcutsTab() {
+  const shortcuts = useSettingsStore((s) => s.shortcuts)
+  const setSetting = useSettingsStore((s) => s.set)
+  const [recording, setRecording] = useState<CommandId | null>(null)
+
+  // While recording, capture the next keypress, turn it into an accelerator,
+  // and store it. Esc cancels. We intercept in the capture phase so the combo
+  // doesn't also trigger the app's own shortcuts.
+  useEffect(() => {
+    if (!recording) return
+    const id = recording
+    function onKey(e: KeyboardEvent) {
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.key === 'Escape') { setRecording(null); return }
+      const accel = accelFromEvent(e)
+      if (!accel) return // modifier-only press — keep listening
+      setSetting('shortcuts', { ...shortcuts, [id]: accel })
+      setRecording(null)
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [recording, shortcuts, setSetting])
+
+  function resetOne(id: CommandId) {
+    const next = { ...shortcuts }
+    delete next[id]
+    setSetting('shortcuts', next)
+  }
+  function unbind(id: CommandId) {
+    setSetting('shortcuts', { ...shortcuts, [id]: '' })
+  }
+
+  // Detect collisions: two commands resolving to the same accelerator.
+  const accelOwners = new Map<string, CommandId[]>()
+  for (const c of COMMANDS) {
+    const a = resolveAccel(c.id, shortcuts)
+    if (!a) continue
+    accelOwners.set(a, [...(accelOwners.get(a) ?? []), c.id])
+  }
+
+  const hasOverrides = Object.keys(shortcuts).length > 0
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-[11.5px] text-muted-foreground leading-relaxed">
+          Click a shortcut to record a new one. Press <b>Esc</b> while recording to cancel.
+        </div>
+        {hasOverrides && (
+          <button
+            onClick={() => setSetting('shortcuts', {})}
+            className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 ml-3"
+          >
+            Restore defaults
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-0.5 max-h-[300px] overflow-y-auto scrollbar-thin pr-1">
+        {COMMANDS.map((c) => {
+          const accel = resolveAccel(c.id, shortcuts)
+          const isOverridden = shortcuts[c.id] !== undefined
+          const conflict = accel && (accelOwners.get(accel)?.length ?? 0) > 1
+          const isRec = recording === c.id
+          return (
+            <div key={c.id} className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-surface-2 group">
+              <span className="flex-1 text-[13px] text-foreground min-w-0 truncate">{c.label}</span>
+
+              {conflict && !isRec && (
+                <span title="This shortcut is used by more than one command" className="text-[11px] text-amber-400 flex-shrink-0">conflict</span>
+              )}
+
+              {isOverridden && !isRec && (
+                <button
+                  onClick={() => resetOne(c.id)}
+                  title={c.defaultAccel ? `Reset to ${formatAccel(c.defaultAccel)}` : 'Reset to unassigned'}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-muted-foreground/60 hover:text-muted-foreground flex-shrink-0"
+                >
+                  reset
+                </button>
+              )}
+
+              <button
+                onClick={() => setRecording(isRec ? null : c.id)}
+                className={[
+                  'min-w-[88px] text-center px-2.5 py-1 rounded-md text-[12px] tabular-nums transition-colors flex-shrink-0 border',
+                  isRec
+                    ? 'border-primary text-primary animate-pulse'
+                    : conflict
+                      ? 'border-amber-400/40 text-foreground hover:border-amber-400'
+                      : 'border-border/50 text-foreground hover:border-primary/60',
+                ].join(' ')}
+              >
+                {isRec ? 'Press keys…' : (accel ? formatAccel(accel) : 'Unassigned')}
+              </button>
+
+              {accel && !isRec && (
+                <button
+                  onClick={() => unbind(c.id)}
+                  title="Remove shortcut"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/50 hover:text-red-400 flex-shrink-0"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
