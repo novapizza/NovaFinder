@@ -240,8 +240,9 @@
 html, body, #root {
   height: 100%;
   overflow: hidden;
-  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
-  font-feature-settings: "ss01", "cv11";
+  /* Match Finder's default: -apple-system resolves to the real San Francisco
+     UI font (with optical Text/Display switching), exactly what Finder uses. */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
   font-size: 13px;
   color: var(--text);
   background: var(--backdrop-base);
@@ -255,10 +256,10 @@ body {}
 
 /* ─── SF Pro font utilities ─── */
 .font-sf-display {
-  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
 }
 .font-sf-text {
-  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
 }
 
 /* ─── Scrollbars ─── */

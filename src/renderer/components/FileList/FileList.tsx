@@ -26,11 +26,12 @@ type Props = {
   registerReload?: (fn: () => void) => void
   registerNewFolder?: (fn: () => void) => void
   registerNewFile?: (fn: () => void) => void
+  registerStartRename?: (fn: () => void) => void
 }
 
 type PendingNew = { type: 'folder' | 'file' }
 
-export function FileList({ paneId, onPreview, onClearPreview, registerReload, registerNewFolder, registerNewFile }: Props) {
+export function FileList({ paneId, onPreview, onClearPreview, registerReload, registerNewFolder, registerNewFile, registerStartRename }: Props) {
   const { panes, activePaneId, showHidden, viewMode, setActivePaneId, navigateTo, navigateUp, setSelection, setSort } = usePaneStore()
   const pane = panes[paneId]
   const addRecent = useRecentsStore((s) => s.add)
@@ -126,6 +127,9 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   const scrollRef = useRef<HTMLDivElement>(null)
   const paneRef = useRef<HTMLDivElement>(null)
   const typeBufferRef = useRef<{ buf: string; at: number }>({ buf: '', at: 0 })
+  // Always points at the latest file-menu API so the keyboard effect (defined
+  // above the menu) can summon it without a stale closure.
+  const fileMenuRef = useRef<ReturnType<typeof useFileMenu> | null>(null)
   const addRecentFolder = useRecentFoldersStore((s) => s.add)
   const gitStatus = useGitStatus(isVirtualMode ? '' : pane.path)
 
@@ -168,6 +172,10 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
   useEffect(() => {
     registerNewFolder?.(() => { setPendingNew({ type: 'folder' }) })
     registerNewFile?.(() => { setPendingNew({ type: 'file' }) })
+    registerStartRename?.(() => {
+      const sel = usePaneStore.getState().panes[paneId].selection
+      if (sel.length) setRenamingPath(sel[sel.length - 1])
+    })
   }, [])
 
   useEffect(() => {
@@ -241,6 +249,20 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
         e.preventDefault()
         const entry = sorted.find((en) => en.path === pane.selection[0])
         if (entry) handleOpen(entry)
+      } else if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
+        // Summon the context menu without a mouse: at the focused row if one
+        // is selected, otherwise the background menu anchored to the pane.
+        e.preventDefault()
+        const selPath = pane.selection[pane.selection.length - 1]
+        const entry = selPath ? sorted.find((en) => en.path === selPath) : undefined
+        if (entry) {
+          const el = scrollRef.current?.querySelector<HTMLElement>(`[data-path="${CSS.escape(entry.path)}"]`)
+          const r = el?.getBoundingClientRect()
+          fileMenuRef.current?.openMenuAt(r ? r.left + 12 : 80, r ? r.bottom - 4 : 80, entry)
+        } else {
+          const r = paneRef.current?.getBoundingClientRect()
+          fileMenuRef.current?.openBgMenuAt((r?.left ?? 60) + 24, (r?.top ?? 60) + 60, pane.path)
+        }
       } else if (/^[A-Za-z0-9]$/.test(e.key) && !e.repeat) {
         // Finder-style type-ahead: jump to first entry whose name starts
         // with the accumulated buffer. Buffer resets after 600ms idle.
@@ -292,7 +314,10 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
       setSelection(paneId, [path], path)
       const entry = sorted.find((e) => e.path === path)
       if (entry && !entry.isDirectory) {
-        addRecent({ path: entry.path, name: entry.name, ext: entry.ext })
+        // Don't re-record on selection while viewing Recents — bumping
+        // openedAt would re-sort the just-clicked file to the front and make
+        // it jump under the cursor. Opening (handleOpen) still records it.
+        if (!isRecentsMode) addRecent({ path: entry.path, name: entry.name, ext: entry.ext })
         onPreview(entry.path, entry.ext)
       } else {
         onClearPreview?.()
@@ -359,6 +384,7 @@ export function FileList({ paneId, onPreview, onClearPreview, registerReload, re
     onRequestRename: (p) => setRenamingPath(p),
     onRequestNew: (type) => setPendingNew({ type }),
   })
+  fileMenuRef.current = fileMenu
 
   function handleContextMenu(e: React.MouseEvent, path: string) {
     const entry = sorted.find((x) => x.path === path)

@@ -96,8 +96,9 @@ contextBridge.exposeInMainWorld('fs', {
   watchStart: (p: string) => ipcRenderer.send('fs:watch:start', p),
   watchStop: (p: string) => ipcRenderer.send('fs:watch:stop', p),
   onWatchEvent: (cb: (e: { dirPath: string; eventType: string; filename: string }) => void) => {
-    ipcRenderer.on('fs:watch:event', (_e, data) => cb(data))
-    return () => ipcRenderer.removeAllListeners('fs:watch:event')
+    const handler = (_e: unknown, data: { dirPath: string; eventType: string; filename: string }) => cb(data)
+    ipcRenderer.on('fs:watch:event', handler)
+    return () => ipcRenderer.removeListener('fs:watch:event', handler)
   },
   onOpenSettings: (cb: () => void) => {
     ipcRenderer.on('app:open-settings', cb)
@@ -106,6 +107,15 @@ contextBridge.exposeInMainWorld('fs', {
   onCheckUpdate: (cb: () => void) => {
     ipcRenderer.on('app:check-update', cb)
     return () => ipcRenderer.removeAllListeners('app:check-update')
+  },
+  // Push the user's shortcut overrides to the main process so the native
+  // menu-bar accelerators stay in sync with the in-app shortcuts.
+  setMenuShortcuts: (overrides: Record<string, string>) => ipcRenderer.send('menu:setShortcuts', overrides),
+  // Native menu item clicks dispatch a command id back to the renderer.
+  onCommand: (cb: (id: string) => void) => {
+    const handler = (_e: unknown, id: string) => cb(id)
+    ipcRenderer.on('app:command', handler)
+    return () => ipcRenderer.removeListener('app:command', handler)
   },
 })
 
@@ -178,6 +188,8 @@ declare global {
       onWatchEvent(cb: (e: { dirPath: string; eventType: string; filename: string }) => void): () => void
       onOpenSettings(cb: () => void): () => void
       onCheckUpdate(cb: () => void): () => void
+      setMenuShortcuts(overrides: Record<string, string>): void
+      onCommand(cb: (id: string) => void): () => void
     }
     update: {
       onStatus(cb: (payload: { status: string } & Record<string, unknown>) => void): () => void

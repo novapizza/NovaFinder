@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { usePaneStore, type ViewMode } from '../store/paneStore'
 import { RECENTS_PATH } from '../store/recentsStore'
 import { parseSmartFolderId, useSmartFoldersStore } from '../store/smartFoldersStore'
-import { parseTagColor, TAG_COLORS } from '../store/tagStore'
+import { parseTagColor } from '../store/tagStore'
+import { useAllTagDefs } from '../store/settingsStore'
 import { SearchBar } from './SearchBar'
 import { SortMenu } from './SortMenu'
 import { Tooltip } from './Tooltip'
@@ -30,7 +31,8 @@ export function Toolbar({ showPreview, onTogglePreview, onRefresh, onNewFolder, 
   const smartFolderId = parseSmartFolderId(pane.path)
   const smartFolder = useSmartFoldersStore((s) => smartFolderId ? s.folders.find((f) => f.id === smartFolderId) : undefined)
   const tagColor = parseTagColor(pane.path)
-  const tagMeta = tagColor ? TAG_COLORS.find((t) => t.name === tagColor) : null
+  const allTagDefs = useAllTagDefs()
+  const tagMeta = tagColor ? allTagDefs.find((t) => t.name === tagColor) : null
   const isVirtualMode = isRecentsMode || !!smartFolder || !!tagColor
   const [trashPath, setTrashPath] = useState<string>('')
   useEffect(() => { window.fs.trashPath().then(setTrashPath) }, [])

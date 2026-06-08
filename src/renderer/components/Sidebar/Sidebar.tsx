@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { SpecialPaths } from '../../../preload'
 import { usePaneStore } from '../../store/paneStore'
-import { useTagStore, TAG_COLORS, tagPath, parseTagColor } from '../../store/tagStore'
+import { useTagStore, tagPath, parseTagColor } from '../../store/tagStore'
 import { useRecentsStore, RECENTS_PATH } from '../../store/recentsStore'
 import { usePinnedStore } from '../../store/pinnedStore'
 import { useRecentFoldersStore } from '../../store/recentFoldersStore'
 import { smartFolderPath, useSmartFoldersStore } from '../../store/smartFoldersStore'
+import { useSettingsStore, useAllTagDefs, isSidebarItemHidden, isSidebarTagHidden, type SidebarItemId } from '../../store/settingsStore'
 import { SidebarIcon, SIDEBAR_ACCENT, type SidebarIconName } from './SidebarIcon'
 import { DiskUsage } from './DiskUsage'
 import { FileIcon } from '../FileIcon'
@@ -32,14 +33,35 @@ export function Sidebar() {
   const removeSmart = useSmartFoldersStore((s) => s.remove)
   const [trashPath, setTrashPath] = useState<string>('')
   const [showICloudOff, setShowICloudOff] = useState(false)
+  const sidebarItems = useSettingsStore((s) => s.sidebarItems)
+  const sidebarTags = useSettingsStore((s) => s.sidebarTags)
+  const allTagDefs = useAllTagDefs()
+  const showItem = (id: SidebarItemId) => !isSidebarItemHidden(sidebarItems, id)
   useEffect(() => { window.fs.trashPath().then(setTrashPath) }, [])
 
   useEffect(() => { window.fs.specialPaths().then(setPaths) }, [])
   useEffect(() => {
     if (!paths) return
-    window.fs.readdirsOnly(paths.volumes)
-      .then((entries) => setVolumes(entries.map((e: { path: string }) => e.path)))
-      .catch(() => setVolumes([]))
+    const refresh = () => {
+      window.fs.readdirsOnly(paths.volumes)
+        .then((entries) => setVolumes(entries.map((e: { path: string }) => e.path)))
+        .catch(() => setVolumes([]))
+    }
+    refresh()
+    // Live-update the Locations list as drives/disk images are mounted or
+    // unmounted, so users don't have to restart to see (or eject) them.
+    window.fs.watchStart(paths.volumes)
+    const off = window.fs.onWatchEvent((evt) => {
+      if (evt.dirPath === paths.volumes) refresh()
+    })
+    // Safety net: re-sync when the window regains focus, in case the native
+    // watch missed an event (or was stopped by another view).
+    window.addEventListener('focus', refresh)
+    return () => {
+      window.fs.watchStop(paths.volumes)
+      off()
+      window.removeEventListener('focus', refresh)
+    }
   }, [paths])
 
   if (!paths) return (
@@ -60,10 +82,10 @@ export function Sidebar() {
 
   type Location = Item & { ejectable?: boolean; ejectJoke?: boolean }
   const locations: Location[] = [
-    { label: 'Macintosh HD', path: paths.root,   icon: 'drive', ejectJoke: true },
-    ...volumes.map((v) => ({ label: v.split('/').pop() || v, path: v, icon: 'drive' as SidebarIconName, ejectable: true })),
-    { label: 'iCloud Drive', path: paths.icloud, icon: 'icloud' },
-    ...(trashPath ? [{ label: 'Trash', path: trashPath, icon: 'recents' as SidebarIconName }] : []),
+    ...(showItem('harddisks') ? [{ label: 'Macintosh HD', path: paths.root, icon: 'drive' as SidebarIconName, ejectJoke: true }] : []),
+    ...(showItem('externalDisks') ? volumes.map((v) => ({ label: v.split('/').pop() || v, path: v, icon: 'drive' as SidebarIconName, ejectable: true })) : []),
+    ...(showItem('icloud') ? [{ label: 'iCloud Drive', path: paths.icloud, icon: 'icloud' as SidebarIconName }] : []),
+    ...(showItem('trash') && trashPath ? [{ label: 'Trash', path: trashPath, icon: 'recents' as SidebarIconName }] : []),
   ]
 
   const JOKES = [
@@ -102,6 +124,8 @@ export function Sidebar() {
     for (const c of colors) tagCounts[c] = (tagCounts[c] ?? 0) + 1
   }
   const hasAnyTags = Object.keys(tagMap).length > 0
+  // Tags that have at least one tagged file AND aren't hidden in Settings.
+  const visibleTags = allTagDefs.filter(({ name }) => !!tagCounts[name] && !isSidebarTagHidden(sidebarTags, name))
 
   function toggle(key: string) {
     setCollapsed((c) => ({ ...c, [key]: !c[key] }))
@@ -129,7 +153,7 @@ export function Sidebar() {
 
       {/* FAVORITES */}
       <Group title="Favorites" collapsed={!!collapsed.Favorites} onToggle={() => toggle('Favorites')}>
-        {hasRecents && (() => {
+        {hasRecents && showItem('recents') && (() => {
           const active = activeNav === RECENTS_PATH
           return (
             <button
@@ -142,7 +166,7 @@ export function Sidebar() {
             </button>
           )
         })()}
-        {favorites.map((item) => {
+        {favorites.filter((item) => showItem(item.icon as SidebarItemId)).map((item) => {
           const active = activeNav === item.path
           return (
             <button
@@ -237,6 +261,7 @@ export function Sidebar() {
       )}
 
       {/* LOCATIONS */}
+      {locations.length > 0 && (
       <Group title="Locations" collapsed={!!collapsed.Locations} onToggle={() => toggle('Locations')}>
         {locations.map((item) => {
           const active = activeNav === item.path
@@ -272,11 +297,12 @@ export function Sidebar() {
           )
         })}
       </Group>
+      )}
 
       {/* TAGS */}
-      {hasAnyTags && (
+      {hasAnyTags && visibleTags.length > 0 && (
         <Group title="Tags" collapsed={!!collapsed.Tags} onToggle={() => toggle('Tags')}>
-          {TAG_COLORS.filter(({ name }) => !!tagCounts[name]).map(({ name, label }) => {
+          {visibleTags.map(({ name, label, hex }) => {
             const active = parseTagColor(currentPath) === name
             return (
               <button
@@ -287,7 +313,7 @@ export function Sidebar() {
               >
                 <span
                   className="h-[16px] w-[16px] rounded-full flex-shrink-0"
-                  style={{ backgroundColor: `var(--tag-${name})`, boxShadow: 'inset 0 0 0 0.5px hsl(0 0% 0% / 0.25)' }}
+                  style={{ backgroundColor: hex, boxShadow: 'inset 0 0 0 0.5px hsl(0 0% 0% / 0.25)' }}
                 />
                 <span className="flex-1 truncate">{label}</span>
                 <span className="text-[11px] text-muted-foreground tabular-nums">{tagCounts[name]}</span>
