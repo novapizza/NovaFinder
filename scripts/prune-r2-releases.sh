@@ -31,16 +31,29 @@ export AWS_DEFAULT_REGION="auto"
 
 aws_s3() { aws s3api "$@" --endpoint-url "$ENDPOINT"; }
 
+# Read newline-delimited stdin into the named array. `mapfile`/`readarray` is
+# bash 4+, but the release runs on macOS where `bash` is the system 3.2 build,
+# so we read with a portable loop instead.
+read_lines() {
+  local __arr="$1" __line
+  eval "$__arr=()"
+  while IFS= read -r __line; do
+    eval "$__arr+=(\"\$__line\")"
+  done
+}
+
 echo "Listing objects in bucket '${R2_RELEASES_BUCKET}'…"
-mapfile -t KEYS < <(
+read_lines KEYS < <(
   aws_s3 list-objects-v2 --bucket "$R2_RELEASES_BUCKET" \
     --query 'Contents[].Key' --output text | tr '\t' '\n' | sed '/^$/d'
 )
 echo "Found ${#KEYS[@]} object(s)."
 
 # Distinct versions present, newest first (semver sort via sort -V).
-mapfile -t VERSIONS < <(
-  printf '%s\n' "${KEYS[@]}" \
+# Guard the array expansion: under `set -u`, bash 3.2 treats "${KEYS[@]}" on an
+# empty array as an unbound variable, so only expand when there is something.
+read_lines VERSIONS < <(
+  if [ "${#KEYS[@]}" -gt 0 ]; then printf '%s\n' "${KEYS[@]}"; fi \
     | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' \
     | sort -uV -r
 )
