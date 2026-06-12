@@ -8,14 +8,38 @@ export function DiskUsage({ label = 'Macintosh HD', path = '/' }: { label?: stri
 
   useEffect(() => {
     let cancelled = false
+    let id: ReturnType<typeof setInterval> | null = null
+
     const tick = () => {
       window.fs.diskUsage(path)
         .then((u) => { if (!cancelled) setUsage(u) })
         .catch(() => { if (!cancelled) setUsage(null) })
     }
-    tick()
-    const id = setInterval(tick, 30_000)
-    return () => { cancelled = true; clearInterval(id) }
+
+    // Only poll while the window is visible. When it's hidden/occluded the
+    // disk figures aren't on screen, so polling just burns CPU/disk wakeups
+    // and battery. Resume (with an immediate refresh) when shown again.
+    const start = () => {
+      if (id != null) return
+      tick()
+      id = setInterval(tick, 30_000)
+    }
+    const stop = () => {
+      if (id != null) { clearInterval(id); id = null }
+    }
+    const onVisibility = () => {
+      if (document.hidden) stop()
+      else start()
+    }
+
+    if (!document.hidden) start()
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => {
+      cancelled = true
+      stop()
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [path])
 
   if (!usage || !usage.total) return null
